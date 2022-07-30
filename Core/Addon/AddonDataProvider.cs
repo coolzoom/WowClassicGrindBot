@@ -74,10 +74,21 @@ namespace Core
                 //
                 processSharp = new ProcessSharp(wowScreen.wowProcess.Process, Process.NET.Memory.MemoryType.Remote);
                 patternScanner = new PatternScanner(processSharp[processSharp.Native.MainModule.ModuleName]);
-
-                fxyz = processSharp.Memory.Read<float>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2CAD878), 3);
-                fOrie = processSharp.Memory.Read<float>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2CAC370));
-                iMapID = processSharp.Memory.Read<int>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2CB2D70));
+				//test read plyer xyz only,
+                //2.5.2 40892 46848120 0x2CAD878
+                //2.5.4.44400 44792952 0x2AB7C78
+				//2.5.4 44833 45337720 0x2B3CC78
+                fxyz = processSharp.Memory.Read<float>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2B3CC78), 3);
+				//Orientation 
+                //2.5.2 40892 46842736  0x2CAC370
+                //2.5.4.44400 46920064  0x2CBF180
+				//2.5.4 44833 45716584  0x2B99468
+                fOrie = processSharp.Memory.Read<float>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2B99468));
+				//MapID 
+                //2.5.2 40892 46869872  0x2CB2D70
+                //2.5.4 44400 46114844  0x2BFA81C
+				//2.5.4 44833 46659612  0x2C7F81C
+                iMapID = processSharp.Memory.Read<int>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2C7F81C));
 
                 BitmapData bd = bitmap.LockBits(rect, ImageLockMode.ReadOnly, pixelFormat);
 
