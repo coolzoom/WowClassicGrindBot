@@ -5,7 +5,10 @@ namespace Core.GOAP
     {
         public bool ShouldConsumeCorpse { get; set; }
         public bool NeedLoot { get; set; }
-        public bool NeedSkin { get; set; }
+        public bool NeedGather { get; set; }
+        public int LootableCorpseCount { get; set; }
+        public int GatherableCorpseCount { get; set; }
+        public int ConsumableCorpseCount { get; set; }
         public int LastCombatKillCount { get; set; }
         public bool Gathering { get; set; }
     }

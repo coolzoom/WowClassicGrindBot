@@ -1,0 +1,15 @@
+﻿@inject IAddonReader addonReader
+@inject AddonConfigurator addonConfigurator
+@inject ExecGameCommand exec
+
+<button class="btn btn-sm btn-primary" @onclick="InitState">
+    <span>Init State</span>
+</button>
+
+@code {
+    private void InitState()
+    {
+        addonReader.FullReset();
+        exec.Run($"/{addonConfigurator.Config.CommandFlush}");
+    }
+}

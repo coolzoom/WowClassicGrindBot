@@ -1,22 +1,26 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/starme.png" alt="Star this Repo"/>
+  <img src="images/starme.png" alt="Star this Repo"/>
 </p>
 
 # Master Of Puppets
 
 - The project current goal is to support `Burning Crusade Classic`
 
-- Addon: https://github.com/FreeHongKongMMO/Happy-Pixels to read the game state. Over the time its been heavily rewritten and optimized.
+- Addon: Modified [Happy-Pixels](https://github.com/FreeHongKongMMO/Happy-Pixels) to read the game state.
 
-- Frontend: uses [Blazor](https://docs.microsoft.com/en-us/aspnet/core/blazor) to show the state in a browser.
+- Frontend: [ASP.NET Core Razor components](https://docs.microsoft.com/en-us/aspnet/core/blazor/components/).
 
-- Backend: written in C#. Screen capture, mouse and keyboard clicking. No memory tampering and DLL injection.
+- BlazorServer: [ASP.NET Core Blazor](https://docs.microsoft.com/en-us/aspnet/core/blazor) to show the state in a browser.
+
+- HeadlessServer: Run from CommandLine without UI. Requires valid configuration files present next to the executable.
+
+- Backend(Core/Game): written in C#. Screen capture, mouse and keyboard clicking. No memory tampering and DLL injection.
 
 - Further detail about the architecture can be found in [Blog post](http://www.codesin.net/post/wowbot/).
 
 - Pathing: Indoors pathfinding only works properly if `PathFilename` is exists. For outdoor there are multiple solutions:
-    * V1 Local - In processs [PPather](https://github.com/namreeb/PPather).
-    * V1 Remote - Out of process [PPather](https://github.com/Xian55/WowClassicGrindBot/tree/main/PathingAPI).
+    * V1 Local - In processs [PPather](https://github.com/Xian55/WowClassicGrindBot/tree/dev/PPather).
+    * V1 Remote - Out of process [PathingAPI](https://github.com/Xian55/WowClassicGrindBot/tree/dev/PathingAPI).
     * V3 Remote - Out of process [AmeisenNavigation](https://github.com/Xian55/AmeisenNavigation/tree/feature/guess-z-coord-after-rewrite)
 
 # Features
@@ -30,16 +34,27 @@
 - Pathfinding in the current zone to the grind location
 - Grind mobs in the described `PathFilename`
 - Blacklist certain NPCs
-- Loot and Skinning
+- Loot and GatherCorpse (Skin, Herb, Mine, Salvage)
 - Vendor goods
 - Repair equipments
 - Corpse run
+- Semi automated gathering [mode](#Modes)
 
 # Media
 
-![Screenshot](https://raw.githubusercontent.com/Xian55/WowClassicGrindBot/main/images/Screenshot.png)
+<a href="./images/Screenshot.png" target="_blank">
+   <img alt="Screenshot" src="./images/Screenshot.png" width=50%">
+</a>
 
 [![YouTube Video](https://img.youtube.com/vi/CIMgbh5LuCc/0.jpg)](https://www.youtube.com/watch?v=CIMgbh5LuCc)
+
+<a href="https://mega.nz/file/vf5BhZiJ#yX77HpxremieqGPQSUgZn55bPqJPz6xRLq2n-srt8eY" target="_blank">
+   <img alt="Death Knight 1" src="https://i.imgur.com/BvEPCl6.jpg" width=50%">
+</a>
+
+<a href="https://mega.nz/file/KDRiCAzI#DamyH3QCha8vm4qfhqVYRb6ffbkhvfyZxWhz9D1OKEc" target="_blank">
+   <img alt="Death Knight 2" src="https://i.imgur.com/3nXwSoy.jpeg" width=50%">
+</a>
 
 # Issues and Ideas
 
@@ -50,17 +65,16 @@ Create an issue with the given template.
 You are welcome to create pull requests. Some ideas of things that could be improved:
 
 * This readme
-* The route recording and editing
 * More route and class profiles
 
 # Contribution
 
-* Runtime Class Profile picker
-* Runtime Path Profile autocomplete search
+* Frontend Runtime Class Profile picker
+* Frontend Runtime Path Profile autocomplete search
 * Frontend Dark mode
 * Improved Loot Goal
-* Added Skinning Goal
-* Introduced a concept of Produce/Consume corpses. In short killing multiple enemies in a single combat, can loot and skin them all.
+* Added Skinning Goal -> GatherCorpse (Skin, Herb, Mine, Salvage)
+* Introduced a concept of `Produce`/`Consume` corpses. Killing multiple enemies in a single combat, can consume them all.
 * `ActionbarPopulator` based on class config
 * `DataConfig`: change where the external data(DBC, MPQ, profiles) can be found
 * Edit the loaded profile from frontend
@@ -81,8 +95,9 @@ Put the contents of the repo into a folder. e.g `C:\WowClassicGrindBot`. I am go
 Download the MPQ route files.
 This files are required for to find paths from where you are to the grind area, vendor and repair.
 
-* Classic: [**common-2.MPQ**](https://drive.google.com/file/d/1k80qqC02Xvpxfy5JQjzAkoixj8b4-EEP/view?usp=sharing) (1.7Gb)
+* Classic: [**common-2.MPQ**](https://mega.nz/file/vXQCBCha#m7COhB9HQd86a5iNAT0-fMLsc-BtoTRO1eIBJNrdTH8) (1.7Gb)
 * TBC: [**expansion.MPQ**](https://mega.nz/file/Of4i2YQS#egDGj-SXi9RigG-_8kPITihFsLom2L1IFF-ltnB3wmU) (1.8Gb)
+* WOTLK: [**lichking.MPQ**](https://mega.nz/file/vDYWSTrK#fvaiuHpd-FTVsQT4ghGLK6QJLZyA87c1rlBEeu1_Btk) (2.5Gb)
 
 Copy the previusly mentioned files to **\Json\MPQ** folder (e.g. `C:\WowClassicGrindBot\Json\MPQ`)
 
@@ -97,7 +112,7 @@ Download the navmesh files.
 1. Navigate to the build location and find `config.cfg`
 1. Edit the file last line to look as `sMmapsPath=C:\mmaps`
 
-# 3.1 System / Video Requirements
+## 3.1 System / Video Requirements
 
 Resultions which based on either 4:3 aspect ratio, tested resolutions:
 * 1024 x 768
@@ -107,7 +122,7 @@ Resultions which based on either 4:3 aspect ratio, tested resolutions:
 For Nvidia users, under Nvidia Control panel settings
 * Make sure the `Image Sharpening` under the `Manage 3D Settings`-> Global settings or Program Settings(for WoW) is set to `Sharpening Off, Scaling disabled`!
 
-# 3.2 In-game Requirements
+## 3.2 In-game Requirements
 
 Required game client settings. Press `ESC` -> `System`
   * System > Advanced > Constrast: `50`
@@ -119,7 +134,7 @@ Required game client settings. Press `ESC` -> `System`
 
 ## 3.3 Optional - Replace default game Font
 
-Highly suggested to replace the default game font with a much **Bolder** one with [this guide](https://tbc.wowhead.com/guides/changing-wow-text-font)
+Highly suggested to replace the default game font with a much **Bolder** one with [this guide](https://classic.wowhead.com/guides/changing-wow-text-font)
 
 Should be only concerned about `Friz Quadrata: the "Everything Else" Font` which is the `FRIZQT__.ttf` named file.
 
@@ -131,7 +146,7 @@ Example - [Robot-Medium](https://fonts.google.com/specimen/Roboto?thickness=5) -
 * [.NET 6.0 SDK](https://dotnet.microsoft.com/download/dotnet/6.0)
 * **Note:** By default all builds will be **x86**.
 
-## 4.2 Build the application
+## 4.2 Build the solution
 
 One of the following IDE or command line
 * Visual Studio
@@ -141,23 +156,23 @@ One of the following IDE or command line
 e.g. Build from Powershell
 ```ps
 cd C:\WowClassicGrindBot
-dotnet build
+dotnet build --configuration Release
 ```
 
-![Build](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/build.png)
+![Build](images/build.png)
 
-## 5. Configuration process
+## 5. BlazorServer Configuration process
 
-The bot reads the game state using small blocks of colour shown at the top of the screen by an Addon. This needs to be configured.
+The app reads the game state using small blocks of colour shown at the top of the screen by an Addon. This needs to be configured.
 
-1. Edit the batch script in `C:\WowClassicGrindBot\BlazorServer` called run.bat, change it to point at where you have put the repo BlazorServer folder
+1. Edit the batch script in `C:\WowClassicGrindBot\BlazorServer` called `run.bat`, change it to point at where you have put the repo BlazorServer folder
 
     e.g.
     ```ps
     start "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe" "http://localhost:5000"
     c:
     cd C:\WowClassicGrindBot\BlazorServer
-    dotnet run
+    dotnet run --configuration Release
     pause
     ```
 
@@ -167,25 +182,42 @@ The bot reads the game state using small blocks of colour shown at the top of th
     * Just start the game and wait in the character selection screen.
     * Click `2. Addon Configuration`
     * Click `Find InstallPath` -> `InstallPath` should be filled otherwise, fill out manually
-    * Fill the `Author` freely
-    * Fill the `Title` freely
+    * Fill out `Author` freely
+    * Fill out `Title` freely
     * Then press `Install & Save` button -> Log should see `AddonConfigurator.Install successful`
     * Required to restart the Game 
     * Enter world with your desired character
     * Click `5. Frame Configuration`
-    * [Guidance for good DataFrame](https://github.com/Xian55/WowClassicGrindBot/wiki/Guidance-for-good-DataFrame)
+    * [Guidance for good DataFrame](../../wiki/Guidance-for-good-DataFrame)
     * Click `Auto Configure and Restart`
-    * [Validate FrameConfiguration](https://github.com/Xian55/WowClassicGrindBot/wiki/Validating-FrameConfiguration)
+    * [Validate FrameConfiguration](../../wiki/Validating-FrameConfiguration)
 
 4. Under the `Addon Configuration` you can check if theres a **newer version available** for the addon. In that case just press the `install` button then have to restart the game client and the bot it self in order to use it properly. 
 
-## 5. The bot should restart and show the dashboard page.
+## 6. BlazorServer should restart and show the dashboard page.
 
-## 6. Configure the Wow Client - Interface Options
+## 7 Optional - Running HeadlessServer
 
-We need to make sure that certain interface options are set. The most important are Click to move and screen flashing on low health. See the list below.
+Similar to BlazorServer project, except without Frontend. Should consume less system resources with a compromise of lacking runtime tweaking ability.
 
-### Interface Options
+Everything has to be setup inside the Class Configuration, in prior.
+
+A successful [Configuration process](#5-BlazorServer-Configuration-process) has a result of a following configuration files
+* `data_config.json`
+* `addon_config.json`
+* `frame_config.json`
+
+In order to run `HeadlessServer` please look at the `HeadlessServer\run.bat`.
+
+e.g. run from Powershell
+```ps
+cd C:\WowClassicGrindBot\HeadlessServer
+.\run.bat Hunter_1.json
+```
+
+## 8. Configure the Wow Client - Interface Options
+
+Need to make sure that certain interface options are set. The most important are `Click-to-Move` and `Do Not Flash Screen at Low Health`.
 
 From the main menu (ESC) set the following under Interface Options:
 
@@ -202,7 +234,7 @@ From the main menu (ESC) set the following under Interface Options:
 | Mouse - Click-to-Move | &#9745; |
 | Mouse - Click-to-Move Camera Style | **Always** |
 
-## 7. Configure the Wow Client - Key Bindings
+## 9. Configure the Wow Client - Key Bindings
 
 From the main menu (ESC) -> `Key Bindings` set the following:
 
@@ -234,37 +266,39 @@ To change the default movement keys to `WASD` in the ClassConfiguration file or 
 | Interact With Target | I | InteractKey | ---- |
 | Assist Target | F | TargetTargetOfTargetKey | ---- |
 | Pet attack | Subtract | PetAttackKey | Only pet based class |
+| Target Focus | PageUp | TargetFocusKey | Only for `"AssistFocus"` Mode |
 
 The `"Interact with Target"` keybind is super important as it allows the bot to turn towards and approach the target.
 The `"Target Last Target"` keybind helps with looting.
 
-## 7.1. Actionbar Key Bindings:
+## 10.1. Actionbar Key Bindings:
 
 The default class profiles assumes the following `Keybinds` setup and using English Keyboard layout.
-In total, `34` key supported.
+In total, `36` key supported.
 
 Highly recommended to use the default setup, in order to get properly working the `ActionBarSlotCost` and `ActionBarSlotUsable`!
 
 | ActionSlot | Key | Description |
 | --- | --- | --- |
-| 1-10 | 1,2,3 .. 9,0,-,= | 0 is the 10th key. |
+| 1-12 | 1,2,3 .. 9,0,-,= | 0 is the 10th key. |
 | Bottom Right ActionBar | - | - |
 | 49-58 | N1,N2,N3 .. N9,N0 | N means Numpad - 0 is the 10th key |
 | Bottom Left ActionBar | - | - |
 | 61-72 | F1,F2,F3 .. F11,F12 | F means Functions |
 
-## 8. Configure the Wow Client - Bindpad addon
+## 11. Configure the Wow Client - Bindpad addon
 
 Bindpad allows keys to be easily bound to commands and macros. Type `/bindpad` to show it.
 
 For each of the following click + to add a new key binding.
 
-|  Key |  Command |
-| ---- | ---- |
-| Delete | /stopattack<br>/stopcasting<br>/petfollow |
-| Insert | /cleartarget |
+|  Key |  Command | Note |
+| ---- | ---- | ---- |
+| Delete | /stopattack<br>/stopcasting<br>/petfollow | ---- |
+| Insert | /cleartarget | ---- |
+| PageDown | /follow | Only for `"AssistFocus"` Mode |
 
-## 9. Class Configuration
+## 12. Class Configuration
 
 Each class has a configuration file in `\Json\class` e.g. the config for a Rogue it is in file `C:\WowClassicGrindBot\Json\class\Rogue.json`.
 
@@ -277,17 +311,19 @@ Take a look at the class files in `/Json/class` for examples of what you can do.
 | `"Log"` | Should logging enabled for `KeyAction(s)`. Requires restart. | true | `true` |
 | `"Loot"` | Should loot the mob | true | `true` |
 | `"Skin"` | Should skin the mob | true | `false` |
+| `"Herb"` | Should herb the mob | true | `false` |
+| `"Mine"` | Should mine the mob | true | `false` |
+| `"Salvage"` | Should salvage the mob | true | `false` |
 | `"UseMount"` | Should use mount when its possible | true | `false` |
 | `"KeyboardOnly"` | Use keyboard to interact only. See [KeyboardOnly](#KeyboardOnly) | false | `true` |
 | `"PathFilename"` | [Path](#Path) to use while alive | **false** | `""` |
-| `"SpiritPathFilename"` | Path to use while dead | true | `""` |
 | `"PathThereAndBack"` | While using the path, [should go start to and reverse](#There-and-back) | true | `true` |
 | `"PathReduceSteps"` | Reduce the number of path points | true | `false` |
 | `"Mode"` | What kind of [behaviour](#Modes) should the bot operate | true | `Mode.Grind` |
 | `"NPCMaxLevels_Above"` | Maximum allowed level above difference to the player | true | `1` |
 | `"NPCMaxLevels_Below"` | Maximum allowed level below difference to the player | true | `7` |
 | `"CheckTargetGivesExp"` | Only engage the target if it yields experience | true | `false` |
-| `"Blacklist"` | List of Npc names which should be avoided | true | `[""]` |
+| `"Blacklist"` | List of names or sub names which must be avoid engaging | true | `[""]` |
 | `"ImmunityBlacklist"` | List of Npc ids which have some sort of `School` immunities | true | `""` |
 | `"IntVariables"` | List of user defined `integer` variables | true | `[]` |
 | --- | --- | --- | --- |
@@ -317,9 +353,15 @@ Take a look at the class files in `/Json/class` for examples of what you can do.
 
 ### KeyboardOnly
 
-Normally, the bot would try to click your wows window for two reasons: target selecting and looting. To achieve this it will move your cursor. If you have multiple screens or simply do not want the bot to move your cursor, you can set `KeyboardOnly` to `true`.
+By Default, the bot attempts to use the mouse for the following reasons:
+* (during `Follow Route`) Target selection
+* (during `Consume Corpse`) `"Loot"`
+* (during `Consume Corpse`) GatherCorpse(`"Skin"`, `"Herb"`, `"Mine"`, `"Salvage"`)
 
-Notice that when `KeyboardOnly` is enabled, the bot will only loot by selecting last target and tap interact key, which may fail to loot every target if there are many. And it will not be able to skin, either. The target selecting will also be limited to using `TargetNearestTargetKey` key, which would significantly reduce the range of selecting target.
+You can disable this behaviour by setting `KeyboardOnly` to `true`. Which has the following effects:
+* `"Loot"` limited, only capable of looting by selecting last target. So after each combat only the **last npc** can be looted.
+* GatherCorpse(`"Skin"`, `"Herb"`, `"Mine"`, `"Salvage"`) unavailable.
+* Target selection limited to only `TargetNearestTargetKey`, which significantly reduce how quickly can find the next target.
 
 ### IntVariables
 
@@ -328,7 +370,9 @@ Gives the ability to the user to define global integer variables along the whole
 For example look at the Warlock profiles.
 ```json
 "IntVariables": {
-    "DOT_MIN_HEALTH%": 35
+    "DOT_MIN_HEALTH%": 35,
+    "Debuff_Frost Fever": 237522,   // iconId https://www.wowhead.com/icons
+    "Debuff_Blood Plague": 237514,  // iconId https://www.wowhead.com/icons
 }
 ```
 
@@ -344,44 +388,52 @@ The path that the class follows is a `json` file in `/Json/path/` which contains
 
 Each `KeyAction` has its own properties to describe what the action is all about. 
 
-Can specify conditions with `Requirement(s)` in order to create a matching action for the situation.
+Can specify conditions with [Requirement(s)](#Requirement) in order to create a matching action for the situation.
 
 | Property Name | Description | Default value |
 | --- | --- | --- |
-| Name | Name of the command. For the `ActionBarPopulator`, lowercase means macro. | `""` |
-| HasCastBar | Does the spell have a cast bar | `false` |
-| StopBeforeCast | Should the char stop moving before casting the spell | `false` |
-| Key | The key to click (`ConsoleKey`) | `""` |
-| PressDuration | How many milliseconds to press the key for | `50` |
-| Form | Shapeshift/Stance form to be in to cast this spell | `Form.None` |
-| Charge | How many times shoud this Command be used in sequence and ignore its Cooldown | `1` |
-| Cooldown | **Note this is not the in-game cooldown!**<br>The time in milliseconds until the command can be used again.<br>This property will be updated when the backend registers the `Key` keypress. | `0` |
-| School | Indicate what type of element. `SchoolMask.`<br>(`Physical, Holy, Fire, Nature, Frost, Shadow, Arcane`) | `SchoolMask.None` |
-| MinMana | The minimum `Mana` required to cast the spell | `0` |
-| MinRage | The minimum `Rage` required to cast the spell | `0` |
-| MinEnergy | The minimum `Energy` required to cast the spell | `0` |
-| MinComboPoints | The minimum combo points required to cast the spell | `0` |
-| WhenUsable | When not in in-game cooldown(`GCD` included) and have the min resource(mana,rage,energy) to use it. | `false` |
-| Requirement | A single "Requirement" (See below) which must be true | |
-| Requirements | A list of "Requirements" which must be true | |
-| WaitForWithinMeleeRange | `PullGoal` only - After casting wait for the mob to be in melee range. Will be repeated until the conditions are met | `false` |
-| WaitForGCD | Indicates should wait for the GCD | `true` |
-| SkipValidation | After button press, skip awaiting in-game effect | `false` |
-| ResetOnNewTarget | Reset the cooldown if the target changes | `false` |
-| Log | Write to the log when this key is evaluated | `true` |
-| DelayBeforeCast | A delay in milliseconds before this spell is cast | `0` |
-| DelayAfterCast | The delay in milliseconds after the spell is cast | `1450` |
-| AfterCastWaitBuff | After the cast happened, should wait until __(player debuff/buff or target debuff/buff)__ changed | `false` |
-| AfterCastWaitNextSwing | After the cast wait for the next melee swing to land | `false` | 
-| Cost | For Adhoc goals the priority | `18` |
-| InCombat | Can it be cast in combat | `false` |
-| StepBackAfterCast | Hero will go back for X milliseconds after casting this spell , usable for spells like `Frost Nova` | `0` |
-| PathFilename | For NPC goals, this is a short path to get close to the NPC to avoid walls etc. | `""` |
-| UseWhenTargetIsCasting | Checks for the target casting/channeling any spell (possible values: `null` -> ignore / `false` -> when enemy not casting / `true` -> when enemy casting) | `null` |
+| `"Name"` | Name of the KeyAction. For the `ActionBarPopulator`, lowercase means macro. | `""` |
+| `"Key"` | Key to press (`ConsoleKey`) | `""` |
+| `"Cost"` | [Adhoc Goals](#Adhoc-Goals) or [NPC Goal](#NPC-Goals) only, priority | `18` |
+| `"PathFilename"` | [NPC Goal](#NPC-Goals) only, this is a short path to get close to the NPC to avoid walls etc. | `""` |
+| `"HasCastBar"` | After key press cast bar is expected?<br>By default sets `BeforeCastStop`=`true` | `false` |
+| `"InCombat"` | Should combat matter when attempt to cast?<br>Accepted values:<br>* `"any value for doesn't matter"`<br>* `"true"`<br>* `"false"` | `false` |
+| `"Item"` | Like on use Trinket, `Food`, `Drink`.<br>The following spells counts as Item, `Throw`, `Auto Shot`, `Shoot` | `false` |
+| `"PressDuration"` | How many milliseconds to hold the key press | `50` |
+| `"Form"` | Shapeshift/Stance form to be in to cast this spell<br>If setted, affects `WhenUsable` | `Form.None` |
+| `"Cooldown"` | **Note this is not the in-game cooldown!**<br>The time in milliseconds before KeyAction can be used again.<br>This property will be updated when the backend registers the `Key` press. It has no feedback from the game. | `400` |
+| `"Charge"` | How many consequent key press should happen before setting Cooldown | `1` |
+| `"School"` | Indicate what type of element the spell do. Accepted values:<br>* `SchoolMask.Physical`<br>* `SchoolMask.Holy`<br>* `SchoolMask.Fire`<br>* `SchoolMask.Nature`<br>* `SchoolMask.Frost`<br>* `SchoolMask.Shadow`<br>* `SchoolMask.Arcane` | `SchoolMask.None` |
+| --- | --- | --- |
+| `"WhenUsable"` | Mapped to [IsUsableAction](https://wowwiki-archive.fandom.com/wiki/API_IsUsableAction) | `false` |
+| `"UseWhenTargetIsCasting"` | Checks for the target casting/channeling.<br>Accepted values:<br>* `null` -> ignore<br>* `false` -> when enemy not casting<br>* `true` -> when enemy casting | `null` |
+| `"Requirement"` | Single [Requirement](#Requirement) | `false` |
+| `"Requirements"` | List of [Requirement](#Requirement) | `false` |
+| `"ResetOnNewTarget"` | Reset the Cooldown if the target changes | `false` |
+| `"Log"` | Related events should appear in the logs | `true` |
+| --- | Before keypress cast, ... | --- |
+| `"BeforeCastStop"` | stop moving. | `false` |
+| `"BeforeCastDelay"` | delay in milliseconds | `0` |
+| --- | After Successful cast, ... | --- |
+| `"AfterCastWaitSwing"` | wait for next melee swing to land.<br>Blocks **CastingHandler**. | `false` |
+| `"AfterCastWaitCastbar"` | wait for the castbar to finish, `SpellQueueTimeMs` excluded.<br>Blocks **CastingHandler**. | `false` |
+| `"AfterCastWaitBuff"` | wait for Aura=__(player-target debuff/buff)__ count changes.<br>Only works properly, when the Aura **count** changes.<br>Not suitable for refreshing already existing Aura<br>Blocks **CastingHandler**. | `false` |
+| `"AfterCastAuraExpected"` | refreshing Aura=__(player-target debuff/buff)__<br>Just adds an extra(`SpellQueueTimeMs`) Cooldown to the action, so it wont repeat itself.<br>Not blocking  **CastingHandler**. | `false` |
+| `"AfterCastWaitBag"` | wait for inventory, bag change.<br>Blocks **CastingHandler**. | `false` |
+| `"AfterCastWaitCombat"` | wait for player entering combat.<br>Blocks **CastingHandler**. | `false` |
+| `"AfterCastWaitMeleeRange"` | wait for interrupted either:<br>* target enters melee range<br>* target starts casting<br>* player receives damage<br>Blocks **CastingHandler**. | `false` |
+| `"AfterCastStepBack"` | start backpedaling for milliseconds.<br>If value set to `-1` attempts to use the whole remaining GCD duration.<br>Blocks **CastingHandler**. | `0` |
+| `"AfterCastWaitGCD"` | the Global cooldown fully expire.<br>Blocks **CastingHandler**. | `0` |
+| `"AfterCastDelay"` | delay in milliseconds.<br>Blocks **CastingHandler**. | `0` |
+| --- | --- | --- |
 
-Some of these properties are optional and not required to be specified. However can create pretty complex conditions and branches to suit the situation.
+Some of these properties are optional and not required to be specified.
 
-e.g. - bare minimum for a spell which has castbar. **Note:** _there are some spells which dosen't have visible castbar. like `"Throw"`, `"Shoot"`, `"Auto Shot"`_
+However you can create complex conditions and branches to suit the situation.
+
+Important, the `AfterCast` prefixed conditions order as is its shows up the the table above.
+
+e.g. - bare minimum for a spell which has castbar.
 ```json
 {
     "Name": "Frostbolt",
@@ -398,11 +450,23 @@ e.g. - bare minimum for a spell which is instant (no castbar)
 }
 ```
 
-Theres are only two specially named KeyAction `Food` and `Water` which is reserved for eating and drinking.
+e.g. for Rogue ability
+```json
+{
+    "Name": "Slice and Dice",
+    "Key": "3",
+    "Requirements": [
+        "!Slice and Dice",
+        "Combo Point > 1"
+    ]
+}
+```
+
+Theres are few specially named KeyAction such as `Food` and `Drink` which is reserved for eating and drinking.
 
 They already have some prebaked `Requirement` conditions in order to avoid mistype the definition. 
 
-The bare minimum for `Food` and `Water` is looks something like this.
+The bare minimum for `Food` and `Drink` is looks something like this.
 ```json
 {
     "Name": "Food",
@@ -410,23 +474,21 @@ The bare minimum for `Food` and `Water` is looks something like this.
     "Requirement": "Health% < 50"
 },
 {
-    "Name": "Water",
+    "Name": "Drink",
     "Key": "=",
     "Requirement": "Mana% < 50"
 }
 ```
+---
 
-e.g. for Rogue ability
-```json
-{
-    "Name": "Slice And Dice",
-    "Key": "3",
-    "MinEnergy": 25,
-    "MinComboPoints": 2,
-    "Cooldown": 3000,
-    "Requirement": "!Slice And Dice"
-}
-```
+### Casting Handler
+
+**CastingHandler** is a component which responsible for handling player spell casting, 
+let it be using an item from the inventory, casting an instant spell or casting a spell which has castbar.
+
+From Addon version **1.6.0** it has been significantly changed to the point where it no longer blocks the execution until the castbar fully finishes, but rather gives back the control to the parent Goal such as [Adhoc Goals](#Adhoc-Goals) or [Pull Goal](#Pull-Goal) or [Combat Goal](#Combat-Goal) to give more time to find the best suitable action for the given moment.
+
+As a result in order to execute the [Pull Goal](#Pull-Goal) sequence in respect, have to combine its `KeyAction(s)` with `AfterCast` prefixed conditions.
 
 ---
 ### Pull Goal
@@ -440,7 +502,7 @@ e.g.
         {
             "Name": "Concussive Shot",
             "Key": "9",
-            "StopBeforeCast": true,
+            "BeforeCastStop": true,
             "Requirements": ["HasRangedWeapon", "!InMeleeRange", "HasAmmo"]
         }
     ]
@@ -463,7 +525,6 @@ e.g.
             "Name": "Fireball",
             "Key": "2",
             "HasCastBar": true,
-            "MinMana": 30,
             "Requirement": "TargetHealth% > 20"
         },
         {
@@ -489,7 +550,6 @@ e.g.
         {
             "Name": "Frost Armor",
             "Key": "3",
-            "MinMana": 60,
             "Requirement": "!Frost Armor"
         },
         {
@@ -498,7 +558,7 @@ e.g.
             "Requirement": "Health% < 30"
         },
         {
-            "Name": "Water",
+            "Name": "Drink",
             "Key": "-",
             "Requirement": "Mana% < 30"
         }
@@ -512,7 +572,7 @@ These `Sequence` of `KeyAction(s)` are done when not in combat and are not on co
 
 The keypresses happens simultaneously on all `KeyAction(s)` which mets the `Requirement`.
 
-Suitable for `Food` and `Water`.
+Suitable for `Food` and `Drink`.
 
 e.g.
 ```json
@@ -524,7 +584,7 @@ e.g.
             "Requirement": "Health% < 50"
         },
         {
-            "Name": "Water",
+            "Name": "Drink",
             "Key": "-",
             "Requirement": "Mana% < 50"
         }
@@ -589,7 +649,7 @@ If you have an NPC that is easy to get to such as the repair NPC in Arathi Highl
 
 Short Path Example:
 
-![Short Path Example](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/NPCPath.png)
+![Short Path Example](images/NPCPath.png)
 
 ### Repeatable Quests Handin
 
@@ -608,26 +668,31 @@ In theory if there is a repeatable quest to collect items, you could set up a NP
 
 A requirement is something that must be evaluated to be `true` for the `KeyAction` to run. 
 
-Not all `KeyAction` needs a requirement, some just rely on a `Cooldown` or `MinMana`/`MinRage`/`MinEnergy`. 
+Not all `KeyAction` requires requirement(s), some rely on
+* `Cooldown` - populated manually
+* `ActionBarCooldownReader` - populated automatically
+* `ActionBarCostReader` - populated automatically including (`MinMana`, `MinRage`, `MinEnergy`, `MinRunicPower`, `MinRuneBlood`, `MinRuneFrost`, `MinRuneUnholy`)
 
-A requirement can be put into a list if there is more than one.
+Can specify `Requirements` for complex condition.
 
 e.g.
 ```json
 {
+    "Name": "Execute",                                            //<--- Has no Requirement
+    "Key": "7",
+    "WhenUsable": true
+},
+{
     "Name": "Soul Shard",
     "Key": "9",
     "HasCastBar": true,
-    "Requirements": ["TargetHealth% < 36", "not BagItem:6265:3"],     //<--- Requirement List
-    "MinMana": 55
+    "Requirements": ["TargetHealth% < 36", "!BagItem:6265:3"]     //<--- Requirement List
 },
 {
     "Name": "Curse of Weakness",
     "Key": "6",
     "WhenUsable": true,
-    "ResetOnNewTarget": true,
-    "Requirement": "!Curse of Weakness",                           //<--- Single Requirement
-    "MinMana": 20
+    "Requirement": "!Curse of Weakness"                           //<--- Single Requirement
 }
 ```
 
@@ -645,7 +710,7 @@ Formula: `[Negate keyword][requirement]`
 e.g.
 ```json
 "Requirement": "not Curse of Weakness"
-"Requirement": "!BagItem:6265:3"
+"Requirement": "!BagItem:Item_Soul_Shard:3"
 ```
 ---
 
@@ -694,6 +759,11 @@ Formula: `[Keyword] [Operator] [Numeric integer value]`
 | `Mana` | Player current mana |
 | `Rage` | Player current rage |
 | `Energy` | Player current energy |
+| `RunicPower` | Player current runic power |
+| `BloodRune` | Player current blood runes |
+| `FrostRune` | Player current frost runes |
+| `UnholyRune` | Player current unholy runes |
+| `TotalRune` | Player current runes (blood+frost+unholy+death) |
 | `Combo Point` | Player current combo points on the target |
 | `BagCount` | How many items in the player inventory |
 | `MobCount` | How many detected, alive, and currently fighting mob around the player |
@@ -709,14 +779,14 @@ Formula: `[Keyword] [Operator] [Numeric integer value]`
 
 For the `MinRange` and `MaxRange` gives an approximation range distance between the player and target.
 
-**Note:** _Every class has it own unique way to find these values by using different in game items/spells/interact ways._
+**Note:** _Every class has it own unique way to find these values by using different in game items/spells/interact._
 
 | MinRange | MaxRange | alias Description |
 | --- | --- | --- |
 | 0 | 5 | "InMeleeRange" |
 | 5 | 15 | "IsInDeadZoneRange" |
 
-Its worth mention that `CD_{KeyAction.Name}` is a dynamic binding.<br>Each `KeyAction` has its own in-game Cooldown which is not the same as `KeyAction.Cooldown`!
+Its worth mention that `CD_{KeyAction.Name}` is a dynamic value.<br>Each `KeyAction` has its own `in-game Cooldown` which is not the same as `KeyAction.Cooldown`!
 
 e.g. Single Requirement
 ```json
@@ -758,7 +828,7 @@ e.g. for `CD`: It's a good idea to put `CD` in healing spells to take considerat
     "Key": "6",
     "HasCastBar": true,
     "WhenUsable": true,
-    "Requirements": ["Health% < 60", "TargetHealth% > 20", "CD==0", "MobCount < 2", "LastMainHandMs <= 1000"],
+    "Requirements": ["Health% < 60", "TargetHealth% > 20", "CD == 0", "MobCount < 2", "LastMainHandMs <= 1000"],
     "Cooldown": 6000
 },
 ```
@@ -769,8 +839,7 @@ e.g. for `CD_{KeyAction.Name}`: Where `Hammer of Justice` referencing the `Judge
     "Name": "Judgement",
     "Key": "1",
     "WhenUsable": true,
-    "Requirements": ["Seal of the Crusader", "!Judgement of the Crusader"],
-    "DelayAfterCast": 0
+    "Requirements": ["Seal of the Crusader", "!Judgement of the Crusader"]
 },
 {
     "Name": "Hammer of Justice",
@@ -784,12 +853,13 @@ e.g. for `CD_{KeyAction.Name}`: Where `Hammer of Justice` referencing the `Judge
 
 If a particular npc is required then this requirement can be used.
 
-Formula: `npcID:[Numeric integer value]`
+Formula: `npcID:[intVariableKey/Numeric integer value]`
 
 e.g.
 
 * `"Requirement": "!npcID:6195"` - target is not [6195](https://tbc.wowhead.com/npc=6195)
 * `"Requirement": "npcID:6195"` - target is [6195](https://tbc.wowhead.com/npc=6195)
+* `"Requirement": "npcID:MyAwesomeIntVariable"`
 
 ---
 ### **Bag requirements**
@@ -798,14 +868,15 @@ If an `itemid` must be in your bag with given `count` quantity then can use this
 
 Useful to determine when to create warlock Healthstone or soul shards.
 
-Formula: `BagItem:[itemid]:[count]`
+Formula: `BagItem:[intVariableKey/itemid]:[count]`
 
 e.g.
 
 * `"Requirement": "BagItem:5175"` - Must have a [Earth Totem](https://tbc.wowhead.com/item=5175) in bag
-* `"Requirement": "BagItem:6265:3"` - Must have atleast [3x Soulshard](https://tbc.wowhead.com/item=6265) in bag
+* `"Requirement": "BagItem:Item_Soul_Shard:3"` - Must have atleast [3x Soulshard](https://tbc.wowhead.com/item=6265) in bag
 * `"Requirement": "not BagItem:19007:1"` - Must not have a [Lesser Healthstone](https://tbc.wowhead.com/item=19007) in bag
 * `"Requirement": "!BagItem:6265:3"` - Must not have [3x Soulshard](https://tbc.wowhead.com/item=6265) in bag
+* `"Requirement": "!BagItem:MyAwesomeIntVariable:69"`
 
 ---
 ### **Form requirements**
@@ -841,6 +912,9 @@ Formula: `Form:[form]`
 | Paladin_Fire_Resistance_Aura |
 | Paladin_Sanctity_Aura |
 | Paladin_Crusader_Aura |
+| DeathKnight_Blood_Presence |
+| DeathKnight_Frost_Presence |
+| DeathKnight_Unholy_Presence |
 
 e.g.
 ```json
@@ -914,6 +988,68 @@ e.g.
 "Requirement": "not Talent:Suppression"        // Must have not know the given `name` 
 ```
 ---
+### **Player Buff remaining time requirements**
+
+First in the `IntVariables` have to mention the buff icon id such as `Buff_{you fancy name}: {icon_id}`.
+
+It is important, thee addon keeps track of the **icon_id**! Not **spell_id**
+
+e.g.
+```json
+"IntVariables": {
+    "Buff_Horn of Winter": 134228
+},
+```
+
+Then in **KeyAction** you can use the following requirement:
+
+e.g.
+```json
+{
+    "Cost": 3.1,
+    "Name": "Horn of Winter",
+    "Key": "F4",
+    "InCombat": "i dont care",
+    "WhenUsable": true,
+    "Requirements": [
+        "Buff_Horn of Winter < 5000", // The remaining time is less then 5 seconds
+        "!Mounted"
+    ],
+    "AfterCastWaitBuff": true
+}     
+```
+---
+### **Target Debuff remaining time requirements**
+
+First in the `IntVariables` have to mention the buff icon id such as `Debuff_{you fancy name}: {icon_id}`
+
+It is important, thee addon keeps track of the **icon_id**! Not **spell_id**
+
+e.g.
+```json
+"IntVariables": {
+    "Debuff_Blood Plague": 237514,
+    "Debuff_Frost Fever": 237522,
+    "Item_Soul_Shard": 6265,
+    "Item_Healthstone": 22105,
+},
+```
+
+Then in **KeyAction** you can use the following requirement:
+
+e.g.
+```json
+{
+    "Name": "Pestilenc",
+    "Key": "F6",
+    "WhenUsable": true,
+    "Requirements": [
+        "Frost Fever && Blood Plague && (Debuff_Frost Fever < 2000 || Debuff_Blood Plague < 2000)",   // Frost Fever and Blood Plague is up
+        "InMeleeRange"                                                                                // and their duration less then 2 seconds
+    ]
+}
+```
+---
 ### **Trigger requirements**
 
 If you feel the current Requirement toolset is not enough for you, you can use other addons such as **WeakAura's** Trigger to control a given bit.
@@ -978,11 +1114,13 @@ Allow requirements about what buffs/debuffs you have or the target has or in gen
 | `"Falling"` | The player is currently falling down, not touching the ground. |
 | `"Has Pet"` | The player's pet is alive |
 | `"Pet Happy"` | Pet happienss is green |
+| `"Mounted"` | Player riding on a mount (druid form excluded) |
 | `"BagFull"` | Inventory is full |
 | `"BagGreyItem"` | Indicates that there are at least one Grey Quality level item. |
 | `"Items Broken"` | Has any broken(red) worn item |
 | `"HasRangedWeapon"` | Has equipped ranged weapon (wand/crossbow/bow/gun) |
 | `"HasAmmo"` | AmmoSlot has equipped ammo and count is greater than zero |
+| `"IsCasting"` | The player is currently casting any spell. |
 | `"InMeleeRange"` | Target is approximately 0-5 yard range |
 | `"InDeadZoneRange"` | Target is approximately 5-11 yard range |
 | `"InCombatRange"` | Class based - Have any ability which allows you to attack target from current place |
@@ -1058,6 +1196,9 @@ Allow requirements about what buffs/debuffs you have or the target has or in gen
 | Warlock | `"Shadow Trance"` |
 | Warlock | `"Soulstone Resurraction"` |
 | Warlock | `"Soul Link"` |
+| Warlock | `"Fel Armor"` |
+| Warlock | `"Fel Domination"` |
+| Warlock | `"Demonic Sacrifice"` |
 | Warrior | `"Battle Shout"` |
 | Warrior | `"Bloodrage"` |
 | Shaman | `"Lightning Shield"` |
@@ -1072,6 +1213,18 @@ Allow requirements about what buffs/debuffs you have or the target has or in gen
 | Hunter | `"Aspect of the Viper"` |
 | Hunter | `"Rapid Fire"` |
 | Hunter | `"Quick Shots"` |
+| Death Knight | `"Blood Tap"` |
+| Death Knight | `"Horn of Winter"` |
+| Death Knight | `"Icebound Fortitude"` |
+| Death Knight | `"Path of Frost"` |
+| Death Knight | `"Anti-Magic Shell"` |
+| Death Knight | `"Army of the Dead"` |
+| Death Knight | `"Vampiric Blood"` |
+| Death Knight | `"Dancing Rune Weapon"` |
+| Death Knight | `"Unbreakable Armor"` |
+| Death Knight | `"Bone Shield"` |
+| Death Knight | `"Summon Gargoyle"` |
+| Death Knight | `"Freezing Fog"` |
 
 </td>
 <td valign="top">
@@ -1084,6 +1237,9 @@ Allow requirements about what buffs/debuffs you have or the target has or in gen
 | Druid | `"Moonfire"` |
 | Druid | `"Entangling Roots"` |
 | Druid | `"Rake"` |
+| Paladin | `"Judgement of the Crusader"` |
+| Paladin | `"Hammer of Justice"` |
+| Paladin | `"Judgement of Wisdom"` |
 | Mage | `"Frostbite"` |
 | Mage | `"Slow"` |
 | Priest | `"Shadow Word: Pain"` |
@@ -1101,6 +1257,10 @@ Allow requirements about what buffs/debuffs you have or the target has or in gen
 | Warrior | `"Hamstring"` |
 | Warrior | `"Charge Stun"` |
 | Hunter | `"Serpent Sting"` |
+| Death Knight | `"Blood Plague"` |
+| Death Knight | `"Frost Fever"` |
+| Death Knight | `"Strangulate"` |
+| Death Knight | `"Chains of Ice"` |
 
 </td></tr> </table>
 
@@ -1158,6 +1318,11 @@ Formula: `SpellInRange:[Numeric integer value]`
 | Warlock | Shoot | 1 |
 | Shaman | Lightning Bolt | 0 |
 | Shaman | Earth Shock | 1 |
+| Death Knight | Icy Touch | 0 |
+| Death Knight | Death Coil | 1 |
+| Death Knight | Death Grip | 2 |
+| Death Knight | Dark Command | 3 |
+| Death Knight | Raise Dead | 4 |
 
 e.g.
 ```json
@@ -1212,10 +1377,11 @@ The available modes are:
 
 | Mode | Description |
 | --- | --- |
-| `"Grind"` | This is the default mode where the bot will pull mobs and follow a route |
-| `"CorpseRun"` | This mode only has 2 goals. The "Wait" goal waits while you are alive. The "CorpseRun" will run back to your corpse when you die. This can be useful if you are farming an instance and die, the bot will run you back some or all of the way to the instance entrance. |
-| `"AttendedGather"` | When this mode is active, you have to `Start Bot` under `Gather` tab and stay at `Gather` tab. It will follow the path and scan the minimap for the yellow nodes which indicate a herb or mining node. Upon found one, the player movement going to stop and alert you by playing beeping sound. Manually have to click at the herb/mine. In the `LogComponent` the necessary prompt will be shown to proceed. **Important note**: `Falling` and `Jumping` means the same thing. So if you lose the ground the bot going to take over control however if a yellow node is visible on the minimap you going to get the control back! Be patient. |
-| `"AttendedGrind"` | This is useful if you want to control the path the bot takes, but want it to pull and kill any targets you select. |
+| `"Grind"` | Default mode.<br>Follows the route. Attempts to find Non-Blacklist targets to kill.<br>(*if enabled*) Attempts to `"Loot"` and GatherCorpse nearby corpses.<br>(*if exists*) Executes `"Adhoc"`, `"NPC"`, `"Parallel"`, `"Pull"`, `"Combat"` Sequences |
+| `"AttendedGrind"` | Similair to `"Grind"`.<br>Navigation disabled.<br>The only difference is that **you** control the route, and select what target to kill. |
+| `"CorpseRun"` | Runs back to the corpse after dies.<br>Can be useful if you are farming an instance and die, the bot will run you back some or all of the way to the instance entrance. |
+| `"AttendedGather"` | Have to `Start Bot` under `Gather` tab and stay at `Gather` tab.<br>Follows the route and scan the minimap for the yellow nodes which indicate a herb or mining node.<br>Once one or more present, the navigation stops and alerts you by playing beeping sound!<br>**You** have to click at the herb/mine. In the `LogComponent` the necessary prompt going be shown to proceed.<br>**Important note**: `Falling` and `Jumping` means the same thing, if you lose the ground the bot going to take over the control! Be patient.<br>(*if exists*) Executes `"Adhoc"`, `"NPC"`, `"Parallel"`, `"Pull"`, `"Combat"` Sequences |
+| `"AssistFocus"` | Navigation disabled.<br>Requires a friendly `focus` to exists. Follows the `focus` target.<br>Once a friendly `focustarget` in 11 yard range attempts to Interact with it.<br>Once a hostile `focustarget` in-combat exists, attempts to assist it (kill it).<br>After leaving combat, (*if enabled*) attempts to Loot and GatherCorpse nearby corpses.<br>Works inside Instances.<br>(*if exists*) Executes `"Adhoc"`, `"Parallel"`, `"Pull"`, `"Combat"` Sequences. |
 
 # User Interface
 
@@ -1242,29 +1408,28 @@ The UI has the following components:
 
 ### Screenshot
 
-![Screenshot Component](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/screenshotComponent.png)
+![Screenshot Component](images/screenshotComponent.png)
 
 ### Player Summary
 
 Show the player state. A hyper link to wowhead appears for the mob you are fighting so you can check out what it drops.
 
-![Player Summary](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/PlayerSummary.png)
+![Player Summary](images/PlayerSummary.png)
 
 ### Route
 
 This component shows:
 
 * The main path
-* The spirit healer path
 * Your location
 * The location of any deaths
 * Pathed routes
 
-![Route](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/Route.png)
+![Route](images/Route.png)
 
 Pathed routes are shown in Green.
 
-![Pathed route](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/PathedRoute.png)
+![Pathed route](images/PathedRoute.png)
 
 ### Goals
 
@@ -1276,7 +1441,7 @@ Some goals (combat,pull target) contain a list of spells which can be cast. The 
 
 The visualisation of the pre-conditions and spell requirements makes it easier to understand what the bot is doing and determine if the class file needs to be tweaked.
 
-![Goals](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/actionsComponent.png)
+![Goals](images/actionsComponent.png)
 
 # Recording a Path
 
@@ -1304,7 +1469,7 @@ The short path to get to the vendor/repairer when there are obstacles close to t
 
 To record a new path place your character where the start of the path should be, then click on the 'Record Path' option on the left hand side of the bot's browser window. Then click 'Record New'.
 
-![New Path](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/Path_New.png)
+![New Path](images/Path_New.png)
 
 Now walk the path the bot should take.
 
@@ -1314,7 +1479,7 @@ For tricky parts you may want to record spots close together by using the 'Dista
 
 Once the path is complete click 'Save'. This path will be saved with a generic filename e.g. `Path_20201108112650.json`, you will need to go into your `/Json/path` and rename it to something sensible.
 
-![Recording Path](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/Path_Recording.png)
+![Recording Path](images/Path_Recording.png)
 
 ## Types of paths
 
@@ -1326,7 +1491,7 @@ Once the path is complete click 'Save'. This path will be saved with a generic f
 
 These paths are run from one end to the other and then walked backwards back to the start. So the end does not need to be near the start.
 
-![There and back path](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/Path_Thereandback.png)
+![There and back path](images/Path_Thereandback.png)
 
 ### Joined up
 
@@ -1336,7 +1501,7 @@ These paths are run from one end to the other and then walked backwards back to 
 
 These paths are run from one end to the other and then repeated. So the path needs to join up with itself i.e. the end needs to be near the start.
 
-![Circular path](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/Path_Circular.png)
+![Circular path](images/Path_Circular.png)
 
 ## Tips  
 
@@ -1375,7 +1540,7 @@ In visual studio just set PathingAPI as the startup project or from the command 
 
 ```ps
 cd C:\WowClassicGrindBot\PathingAPI
-dotnet run
+dotnet run --configuration Release
 ```
 
 Then in a browser go to http://localhost:5001
@@ -1398,23 +1563,23 @@ Search gives some predefined locations to search from and to.
 
 In visual studio right click the solution and set Multiple startup projects to BlazorServer and PathingApi and run.
 
-Or from 2 command lines dotnet run each.
+Or from 2 command lines `dotnet run` each.
 
 ```ps
 cd c:\WowClassicGrindBot\PathingAPI
-dotnet run
+dotnet run --configuration Release
 ```
 
 ```ps
 cd c:\WowClassicGrindBot\BlazorServer
-dotnet run
+dotnet run --configuration Release
 ```
 
 ## As a library used within the bot
 
 The bot will use the PathingAPI to work out routes, these are shown on the route map as green points.
 
-![Pathed Route](https://raw.githubusercontent.com/julianperrott/WowClassicGrindBot/master/images/PathedRoute.png)
+![Pathed Route](images/PathedRoute.png)
 
 
 # Macros

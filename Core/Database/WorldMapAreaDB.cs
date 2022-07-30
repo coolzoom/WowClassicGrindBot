@@ -13,16 +13,16 @@ namespace Core.Database
 
         public WorldMapAreaDB(DataConfig dataConfig)
         {
-            var list = JsonConvert.DeserializeObject<List<WorldMapArea>>(File.ReadAllText(Path.Join(dataConfig.WorldToMap, "WorldMapArea.json")));
-            list.ForEach(x =>
+            WorldMapArea[] wmas = JsonConvert.DeserializeObject<WorldMapArea[]>(File.ReadAllText(Path.Join(dataConfig.Dbc, "WorldMapArea.json")));
+            for (int i = 0; i < wmas.Length; i++)
             {
-                areas.Add(x.UIMapId, x);
-            });
+                areas.Add(wmas[i].UIMapId, wmas[i]);
+            }
         }
 
         public int GetAreaId(int uiMapId)
         {
-            if(areas.TryGetValue(uiMapId, out var map))
+            if (areas.TryGetValue(uiMapId, out var map))
             {
                 return map.AreaID;
             }
@@ -30,34 +30,23 @@ namespace Core.Database
             return -1;
         }
 
-        public Vector3 GetWorldLocation(int uiMapId, Vector3 p, bool flipXY)
+        public Vector3 ToWorld(int uiMapId, Vector3 local, bool flipXY)
         {
             var worldMapArea = areas[uiMapId];
             if (flipXY)
             {
-                return new Vector3(worldMapArea.ToWorldX(p.Y), worldMapArea.ToWorldY(p.X), p.Z);
+                return new Vector3(worldMapArea.ToWorldX(local.Y), worldMapArea.ToWorldY(local.X), local.Z);
             }
             else
             {
-                return new Vector3(worldMapArea.ToWorldX(p.X), worldMapArea.ToWorldY(p.Y), p.Z);
+                return new Vector3(worldMapArea.ToWorldX(local.X), worldMapArea.ToWorldY(local.Y), local.Z);
             }
         }
 
-        public WorldMapAreaSpot ToMapAreaSpot(float x, float y, float z, string continent, int mapHint)
+        public Vector3 ToLocal(Vector3 world, float mapId, int uiMap)
         {
-            var area = WorldMapAreaFactory.GetWorldMapArea(areas.Values, x, y, continent, mapHint);
-            return new WorldMapAreaSpot
-            {
-                X = area.ToMapY(y),
-                Y = area.ToMapX(x),
-                Z = z,
-                MapID = area.UIMapId
-            };
-        }
-        public Vector3 ToAreaLoc(float x, float y, float z, string continent, int mapHint)
-        {
-            var area = WorldMapAreaFactory.GetWorldMapArea(areas.Values, x, y, continent, mapHint);
-            return new Vector3(area.ToMapY(y), area.ToMapX(x), z);
+            var area = WorldMapAreaFactory.GetWorldMapArea(areas.Values, world.X, world.Y, mapId, uiMap);
+            return new Vector3(area.ToMapY(world.Y), area.ToMapX(world.X), world.Z);
         }
 
         public bool TryGet(int uiMapId, out WorldMapArea area)

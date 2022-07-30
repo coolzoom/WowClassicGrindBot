@@ -1,10 +1,9 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
-using GregsStack.InputSimulatorStandard;
 using GregsStack.InputSimulatorStandard.Native;
-using WinAPI;
+using static WinAPI.NativeMethods;
+using TextCopy;
 
 namespace Game
 {
@@ -15,13 +14,13 @@ namespace Game
 
         private readonly Random random = new();
         private readonly GregsStack.InputSimulatorStandard.InputSimulator simulator;
-        private readonly Process process;
+        private readonly WowProcess wowProcess;
 
         private readonly CancellationTokenSource _cts;
 
-        public InputSimulator(Process process, int minDelay, int maxDelay)
+        public InputSimulator(WowProcess wowProcess, int minDelay, int maxDelay)
         {
-            this.process = process;
+            this.wowProcess = wowProcess;
 
             MIN_DELAY = minDelay;
             MAX_DELAY = maxDelay;
@@ -32,7 +31,7 @@ namespace Game
 
         public void Dispose()
         {
-            _cts.Dispose();
+            _cts.Cancel();
         }
 
         private int Delay(int milliseconds)
@@ -44,16 +43,16 @@ namespace Game
 
         public void KeyDown(int key)
         {
-            if(NativeMethods.GetForegroundWindow() != process.MainWindowHandle)
-                NativeMethods.SetForegroundWindow(process.MainWindowHandle);
+            if (GetForegroundWindow() != wowProcess.Process.MainWindowHandle)
+                SetForegroundWindow(wowProcess.Process.MainWindowHandle);
 
             simulator.Keyboard.KeyDown((VirtualKeyCode)key);
         }
 
         public void KeyUp(int key)
         {
-            if (NativeMethods.GetForegroundWindow() != process.MainWindowHandle)
-                NativeMethods.SetForegroundWindow(process.MainWindowHandle);
+            if (GetForegroundWindow() != wowProcess.Process.MainWindowHandle)
+                SetForegroundWindow(wowProcess.Process.MainWindowHandle);
 
             simulator.Keyboard.KeyUp((VirtualKeyCode)key);
         }
@@ -91,7 +90,7 @@ namespace Game
 
         public void SetCursorPosition(Point p)
         {
-            NativeMethods.GetWindowRect(process.MainWindowHandle, out var rect);
+            GetWindowRect(wowProcess.Process.MainWindowHandle, out Rectangle rect);
             p.X = p.X * 65535 / rect.Width;
             p.Y = p.Y * 65535 / rect.Height;
             simulator.Mouse.MoveMouseTo(Convert.ToDouble(p.X), Convert.ToDouble(p.Y));
@@ -99,15 +98,23 @@ namespace Game
 
         public void SendText(string text)
         {
-            if (NativeMethods.GetForegroundWindow() != process.MainWindowHandle)
-                NativeMethods.SetForegroundWindow(process.MainWindowHandle);
+            if (GetForegroundWindow() != wowProcess.Process.MainWindowHandle)
+                SetForegroundWindow(wowProcess.Process.MainWindowHandle);
 
             simulator.Keyboard.TextEntry(text);
             Delay(25);
         }
 
+        public void SetClipboard(string text)
+        {
+            ClipboardService.SetText(text);
+        }
+
         public void PasteFromClipboard()
         {
+            if (GetForegroundWindow() != wowProcess.Process.MainWindowHandle)
+                SetForegroundWindow(wowProcess.Process.MainWindowHandle);
+
             simulator.Keyboard.ModifiedKeyStroke(VirtualKeyCode.LCONTROL, VirtualKeyCode.VK_V);
         }
     }

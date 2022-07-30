@@ -1,17 +1,16 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
-using PathingAPI.Data;
+using Serilog;
+using Serilog.Extensions.Logging;
+using PPather;
+using SharedLib.Converters;
 
 namespace PathingAPI
 {
@@ -20,6 +19,18 @@ namespace PathingAPI
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            var logfile = "out.log";
+            var config = new LoggerConfiguration()
+                //.MinimumLevel.Debug()
+                //.MinimumLevel.Verbose()
+                .WriteTo.PathingAPILoggerSink()
+                .WriteTo.File(logfile, rollingInterval: RollingInterval.Day)
+                .WriteTo.Debug(outputTemplate: "[{Timestamp:HH:mm:ss:fff} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss:fff} {Level:u3}] {Message:lj}{NewLine}{Exception}");
+
+            Log.Logger = config.CreateLogger();
+            Log.Logger.Debug("Startup()");
         }
 
         public IConfiguration Configuration { get; }
@@ -28,11 +39,18 @@ namespace PathingAPI
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            var logger = new SerilogLoggerProvider(Log.Logger).CreateLogger(nameof(Program));
+            services.AddSingleton(logger);
+
             services.AddRazorPages();
             services.AddServerSideBlazor();
             services.AddSingleton<PPatherService>();
-            services.AddSingleton<PatherPath.Logger>();
-            services.AddControllers();
+            services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+                options.JsonSerializerOptions.Converters.Add(new Vector3Converter());
+                options.JsonSerializerOptions.Converters.Add(new Vector4Converter());
+            });
 
             // Register the Swagger generator, defining 1 or more Swagger documents
             services.AddSwaggerGen(c =>

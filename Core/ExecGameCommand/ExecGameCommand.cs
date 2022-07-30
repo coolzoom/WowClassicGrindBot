@@ -2,7 +2,6 @@
 using System;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using TextCopy;
 
 namespace Core
 {
@@ -10,10 +9,14 @@ namespace Core
     {
         private readonly ILogger logger;
         private readonly WowProcessInput wowProcessInput;
+        private readonly CancellationTokenSource cts;
 
-        public ExecGameCommand(ILogger logger, WowProcessInput wowProcessInput)
+        private readonly Random random = new();
+
+        public ExecGameCommand(ILogger logger, CancellationTokenSource cts, WowProcessInput wowProcessInput)
         {
             this.logger = logger;
+            this.cts = cts;
             this.wowProcessInput = wowProcessInput;
         }
 
@@ -22,19 +25,23 @@ namespace Core
             wowProcessInput.SetForegroundWindow();
             logger.LogInformation(content);
 
-            ClipboardService.SetText(content);
-            Thread.Sleep(50);
+            wowProcessInput.SetClipboard(content);
+            Wait(100, 250);
 
             // Open chat inputbox
-            wowProcessInput.KeyPress(ConsoleKey.Enter, 50);
+            wowProcessInput.KeyPress(ConsoleKey.Enter, random.Next(50, 100));
 
-            // Send Paste keys
             wowProcessInput.PasteFromClipboard();
-            Thread.Sleep(250);
+            Wait(100, 250);
 
-            //
-            wowProcessInput.KeyPress(ConsoleKey.Enter, 50);
-            Thread.Sleep(250);
+            // Close chat inputbox
+            wowProcessInput.KeyPress(ConsoleKey.Enter, random.Next(50, 100));
+            Wait(100, 250);
+        }
+
+        private void Wait(int min, int max)
+        {
+            cts.Token.WaitHandle.WaitOne(random.Next(min, max));
         }
     }
 }

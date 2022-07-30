@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using Core.Talents;
 using Core.Database;
-using System.Linq;
 
 namespace Core
 {
@@ -9,25 +8,24 @@ namespace Core
     {
         private readonly int cTalent;
 
-        private readonly ISquareReader reader;
         private readonly PlayerReader playerReader;
         private readonly TalentDB talentDB;
-        public int Count => Talents.Sum(x => x.Value.CurrentRank);
+        public int Count { get; private set; }
 
         public Dictionary<int, Talent> Talents { get; } = new();
+        public Dictionary<int, int> Spells { get; } = new();
 
-        public TalentReader(ISquareReader reader, int cTalent, PlayerReader playerReader, TalentDB talentDB)
+        public TalentReader(int cTalent, PlayerReader playerReader, TalentDB talentDB)
         {
-            this.reader = reader;
             this.cTalent = cTalent;
 
             this.playerReader = playerReader;
             this.talentDB = talentDB;
         }
 
-        public void Read()
+        public void Read(IAddonDataProvider reader)
         {
-            int data = reader.GetIntAtCell(cTalent);
+            int data = reader.GetInt(cTalent);
             if (data == 0 || Talents.ContainsKey(data)) return;
 
             int hash = data;
@@ -50,24 +48,27 @@ namespace Core
                 CurrentRank = data
             };
 
-            if (talentDB.Update(ref talent, playerReader.Class))
+            if (talentDB.Update(ref talent, playerReader.Class, out int id))
             {
                 Talents.Add(hash, talent);
+                Spells.Add(hash, id);
+                Count += talent.CurrentRank;
             }
         }
 
         public void Reset()
         {
+            Count = 0;
             Talents.Clear();
+            Spells.Clear();
         }
 
         public bool HasTalent(string name, int rank)
         {
             foreach (var kvp in Talents)
             {
-                if (!string.IsNullOrEmpty(kvp.Value.Name) &&
-                    kvp.Value.Name.ToLower() == name.ToLower() &&
-                    kvp.Value.CurrentRank >= rank)
+                if (kvp.Value.CurrentRank >= rank &&
+                    kvp.Value.Name.Equals(name, System.StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

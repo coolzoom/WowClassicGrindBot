@@ -249,8 +249,8 @@ _Pvt_Extensions
 .paket/paket.exe
 paket-files/
 
-# FAKE - F# Make
-.fake/
+# Addon dev
+.addon_dev/
 
 # JetBrains Rider
 .idea/
@@ -267,6 +267,10 @@ __pycache__/
 *.log
 Json/History/*.*
 
+# Private profiles
+Json/class/_
+Json/path/_
+
 # Configs
 **/frame_config.json
 **/addon_config.json
@@ -275,6 +279,10 @@ Json/History/*.*
 BlazorServer/frame_config.json
 BlazorServer/addon_config.json
 BlazorServer/data_config.json
+
+HeadlessServer/frame_config.json
+HeadlessServer/addon_config.json
+HeadlessServer/data_config.json
 
 PathingAPI/frame_config.json
 PathingAPI/addon_config.json

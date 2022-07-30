@@ -26,15 +26,24 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AddonConfig\AddonConfig.csproj" />
     <ProjectReference Include="..\Core\Core.csproj" />
-    <ProjectReference Include="..\PathingAPI\PathingAPI.csproj" />
+    <ProjectReference Include="..\Frontend\Frontend.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BlazorTable" Version="1.17.0" />
-    <PackageReference Include="MatBlazor" Version="2.8.0" />
-    <PackageReference Include="Serilog.AspNetCore" Version="4.1.0" />
+    <None Update="addon_config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="data_config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Update="frame_config.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
     <PackageReference Include="Serilog.Enrichers.Environment" Version="2.2.0" />
     <PackageReference Include="Serilog.Enrichers.Process" Version="2.0.2" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />

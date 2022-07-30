@@ -1,112 +1,94 @@
 ﻿using Core.GOAP;
 using Microsoft.Extensions.Logging;
-using SharedLib.Extensions;
 using System;
 using System.Numerics;
-using System.Threading.Tasks;
+
+#pragma warning disable 162
 
 namespace Core.Goals
 {
-    public class ApproachTargetGoal : GoapGoal
+    public class ApproachTargetGoal : GoapGoal, IGoapEventListener
     {
-        public override float CostOfPerformingAction { get => 8f; }
+        private const bool debug = true;
+        private const double STUCK_INTERVAL_MS = 400; // cant be lower than Approach.Cooldown
+
+        public override float Cost => 8f;
 
         private readonly ILogger logger;
         private readonly ConfigurableInput input;
-
         private readonly Wait wait;
+        private readonly AddonReader addonReader;
         private readonly PlayerReader playerReader;
         private readonly StopMoving stopMoving;
-        private readonly MountHandler mountHandler;
-
-        private const bool debug = true;
+        private readonly CombatUtil combatUtil;
+        private readonly IBlacklist blacklist;
 
         private readonly Random random = new();
 
         private DateTime approachStart;
 
-        private bool playerWasInCombat;
-        private float lastPlayerDistance;
+        private double nextStuckCheckTime;
         private Vector3 lastPlayerLocation;
 
         private int initialTargetGuid;
         private float initialMinRange;
 
-        private int SecondsSinceApproachStarted => (int)(DateTime.UtcNow - approachStart).TotalSeconds;
+        private double ApproachDurationMs => (DateTime.UtcNow - approachStart).TotalMilliseconds;
 
-        private bool HasPickedUpAnAdd
-        {
-            get
-            {
-                return playerReader.Bits.PlayerInCombat && !playerReader.Bits.TargetOfTargetIsPlayer;
-            }
-        }
-
-        public ApproachTargetGoal(ILogger logger, ConfigurableInput input, Wait wait, PlayerReader playerReader, StopMoving stopMoving, MountHandler mountHandler)
+        public ApproachTargetGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, StopMoving stopMoving, CombatUtil combatUtil, IBlacklist blacklist)
+            : base(nameof(ApproachTargetGoal))
         {
             this.logger = logger;
             this.input = input;
 
             this.wait = wait;
-            this.playerReader = playerReader;
+            this.addonReader = addonReader;
+            this.playerReader = addonReader.PlayerReader;
             this.stopMoving = stopMoving;
-            this.mountHandler = mountHandler;
-
-            lastPlayerDistance = 0;
-            lastPlayerLocation = playerReader.PlayerLocation;
-
-            initialTargetGuid = playerReader.TargetGuid;
-            initialMinRange = 0;
+            this.combatUtil = combatUtil;
+            this.blacklist = blacklist;
 
             AddPrecondition(GoapKey.hastarget, true);
             AddPrecondition(GoapKey.targetisalive, true);
+            AddPrecondition(GoapKey.targethostile, true);
             AddPrecondition(GoapKey.incombatrange, false);
 
             AddEffect(GoapKey.incombatrange, true);
         }
 
-        public override ValueTask OnEnter()
+        public void OnGoapEvent(GoapEventArgs e)
         {
-            playerWasInCombat = playerReader.Bits.PlayerInCombat;
-
-            initialTargetGuid = playerReader.TargetGuid;
-            initialMinRange = playerReader.MinRange;
-
-            approachStart = DateTime.UtcNow;
-
-            return ValueTask.CompletedTask;
+            if (e is ResumeEvent)
+            {
+                approachStart = DateTime.UtcNow;
+            }
         }
 
-        public override ValueTask PerformAction()
+        public override void OnEnter()
         {
+            initialTargetGuid = playerReader.TargetGuid;
+            initialMinRange = playerReader.MinRange();
             lastPlayerLocation = playerReader.PlayerLocation;
-            wait.Update(1);
 
-            if (!playerReader.Bits.PlayerInCombat)
+            combatUtil.Update();
+
+            approachStart = DateTime.UtcNow;
+            SetNextStuckTimeCheck();
+        }
+
+        public override void Update()
+        {
+            wait.Update();
+
+            if (combatUtil.EnteredCombat() && !playerReader.Bits.TargetInCombat())
             {
-                playerWasInCombat = false;
-            }
-            else
-            {
-                // we are in combat
-                if (!playerWasInCombat && HasPickedUpAnAdd)
-                {
-                    logger.LogInformation("WARN Bodypull -- Looks like we have an add on approach");
-                    logger.LogInformation($"Combat={playerReader.Bits.PlayerInCombat}, Is Target targetting me={playerReader.Bits.TargetOfTargetIsPlayer}");
+                stopMoving.Stop();
 
-                    stopMoving.Stop();
-                    input.ClearTarget();
-                    wait.Update(1);
+                input.ClearTarget();
+                wait.Update();
 
-                    if (playerReader.PetHasTarget)
-                    {
-                        input.TargetPet();
-                        input.TargetOfTarget();
-                        wait.Update(1);
-                    }
-                }
-
-                playerWasInCombat = true;
+                combatUtil.AquiredTarget(5000);
+                return;
             }
 
             if (input.ClassConfig.Approach.GetCooldownRemaining() == 0)
@@ -114,99 +96,111 @@ namespace Core.Goals
                 input.Approach();
             }
 
-            lastPlayerDistance = playerReader.PlayerLocation.DistanceXYTo(lastPlayerLocation);
-
-            if (lastPlayerDistance < 0.05 && playerReader.LastUIErrorMessage == UI_ERROR.ERR_AUTOFOLLOW_TOO_FAR)
+            if (!playerReader.Bits.PlayerInCombat())
             {
-                playerReader.LastUIErrorMessage = UI_ERROR.NONE;
+                NonCombatApproach();
+                RandomJump();
+            }
+        }
 
-                Log("Too far, start moving forward!");
-                input.SetKeyState(input.ForwardKey, true);
-                wait.Update(1);
+        private void NonCombatApproach()
+        {
+            if (ApproachDurationMs >= nextStuckCheckTime)
+            {
+                SetNextStuckTimeCheck();
+
+                Vector3 last = lastPlayerLocation;
+                lastPlayerLocation = playerReader.PlayerLocation;
+                if (!combatUtil.IsPlayerMoving(last))
+                {
+                    if (playerReader.LastUIError == UI_ERROR.ERR_AUTOFOLLOW_TOO_FAR)
+                    {
+                        playerReader.LastUIError = UI_ERROR.NONE;
+
+                        if (debug)
+                            Log($"Too far ({playerReader.MinRange()} yard), start moving forward!");
+
+                        input.Proc.SetKeyState(input.Proc.ForwardKey, true);
+                        return;
+                    }
+
+                    if (debug)
+                        Log($"Seems stuck! Clear Target.");
+
+                    input.ClearTarget();
+                    input.Proc.KeyPress(random.Next(2) == 0 ? input.Proc.TurnLeftKey : input.Proc.TurnRightKey, 250 + random.Next(250));
+
+                    return;
+                }
             }
 
-            if (SecondsSinceApproachStarted > 1 && lastPlayerDistance < 0.05 && !playerReader.Bits.PlayerInCombat)
+            if (ApproachDurationMs > 15_000)
             {
+                if (debug)
+                    Log("Too long time. Clear Target. Turn away.");
+
                 input.ClearTarget();
-                wait.Update(1);
-                Log($"Seems stuck! Clear Target. Turn away. d: {lastPlayerDistance}");
-                input.KeyPress(random.Next(2) == 0 ? input.TurnLeftKey : input.TurnRightKey, 1000);
+                input.Proc.KeyPress(random.Next(2) == 0 ? input.Proc.TurnLeftKey : input.Proc.TurnRightKey, 250 + random.Next(250));
 
-                approachStart = DateTime.UtcNow;
-            }
-
-            if (SecondsSinceApproachStarted > 15 && !playerReader.Bits.PlayerInCombat)
-            {
-                input.ClearTarget();
-                wait.Update(1);
-                Log("Too long time. Clear Target. Turn away.");
-                input.KeyPress(random.Next(2) == 0 ? input.TurnLeftKey : input.TurnRightKey, 1000);
-
-                approachStart = DateTime.UtcNow;
+                return;
             }
 
             if (playerReader.TargetGuid == initialTargetGuid)
             {
-                var initialTargetMinRange = playerReader.MinRange;
-                if (!playerReader.Bits.PlayerInCombat)
+                int initialTargetMinRange = playerReader.MinRange();
+                if (input.ClassConfig.TargetNearestTarget.GetCooldownRemaining() == 0)
                 {
-                    if (input.ClassConfig.TargetNearestTarget.GetCooldownRemaining() == 0)
-                    {
-                        Log("Try to find closer target...");
-                        input.NearestTarget();
-                        wait.Update(1);
-                    }
+                    input.NearestTarget();
+                    wait.Update();
                 }
 
                 if (playerReader.TargetGuid != initialTargetGuid)
                 {
-                    if (playerReader.HasTarget) // blacklist
+                    if (playerReader.Bits.HasTarget() && !blacklist.IsTargetBlacklisted()) // blacklist
                     {
-                        if (playerReader.MinRange < initialTargetMinRange)
+                        if (playerReader.MinRange() < initialTargetMinRange)
                         {
-                            Log($"Found a closer target! {playerReader.MinRange} < {initialTargetMinRange}");
-                            initialMinRange = playerReader.MinRange;
+                            if (debug)
+                                Log($"Found a closer target! {playerReader.MinRange()} < {initialTargetMinRange}");
+
+                            initialMinRange = playerReader.MinRange();
                         }
                         else
                         {
                             initialTargetGuid = -1;
-                            Log("Stick to initial target!");
+                            if (debug)
+                                Log("Stick to initial target!");
+
                             input.LastTarget();
-                            wait.Update(1);
+                            wait.Update();
                         }
                     }
                     else
                     {
-                        Log($"Lost the target due blacklist!");
+                        if (debug)
+                            Log($"Lost the target due blacklist!");
                     }
                 }
             }
 
-            if (initialMinRange < playerReader.MinRange && !playerReader.Bits.PlayerInCombat)
+            if (ApproachDurationMs > 2000 && initialMinRange < playerReader.MinRange())
             {
-                Log($"We are going away from the target! {initialMinRange} < {playerReader.MinRange}");
+                if (debug)
+                    Log($"Going away from the target! {initialMinRange} < {playerReader.MinRange()}");
+
                 input.ClearTarget();
-                wait.Update(1);
-
-                approachStart = DateTime.UtcNow;
             }
-
-            RandomJump();
-
-            return ValueTask.CompletedTask;
         }
 
-        public override void OnActionEvent(object sender, ActionEventArgs e)
+        private void SetNextStuckTimeCheck()
         {
-            if (e.Key == GoapKey.resume)
-            {
-                approachStart = DateTime.UtcNow;
-            }
+            nextStuckCheckTime = ApproachDurationMs + STUCK_INTERVAL_MS;
         }
 
         private void RandomJump()
         {
-            if ((DateTime.UtcNow - approachStart).TotalSeconds > 2 && input.ClassConfig.Jump.MillisecondsSinceLastClick > random.Next(5000, 25_000))
+            if (ApproachDurationMs > 2000 &&
+                input.ClassConfig.Jump.MillisecondsSinceLastClick > random.Next(5000, 25_000))
             {
                 input.Jump();
             }
@@ -214,11 +208,7 @@ namespace Core.Goals
 
         private void Log(string text)
         {
-            if (debug)
-            {
-                logger.LogInformation($"{nameof(ApproachTargetGoal)}: {text}");
-            }
+            logger.LogDebug(text);
         }
-
     }
 }

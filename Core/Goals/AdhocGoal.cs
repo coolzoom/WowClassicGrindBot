@@ -1,12 +1,13 @@
 ﻿using Core.GOAP;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Threading.Tasks;
 
 namespace Core.Goals
 {
     public class AdhocGoal : GoapGoal
     {
+        public override float Cost => key.Cost;
+
         private readonly ILogger logger;
         private readonly ConfigurableInput input;
 
@@ -14,17 +15,17 @@ namespace Core.Goals
         private readonly StopMoving stopMoving;
         private readonly AddonReader addonReader;
         private readonly PlayerReader playerReader;
-        
+
         private readonly KeyAction key;
         private readonly CastingHandler castingHandler;
         private readonly MountHandler mountHandler;
-        public override float CostOfPerformingAction => key.Cost;
 
-        private readonly Func<bool> dangerCombat;
+        private readonly bool? combatMatters;
 
-        public override string Name => Keys.Count == 0 ? base.Name : Keys[0].Name;
+        private bool castSuccess;
 
-        public AdhocGoal(ILogger logger, ConfigurableInput input, Wait wait, KeyAction key, AddonReader addonReader, StopMoving stopMoving, CastingHandler castingHandler, MountHandler mountHandler)
+        public AdhocGoal(KeyAction key, ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, StopMoving stopMoving, CastingHandler castingHandler, MountHandler mountHandler)
+            : base(nameof(AdhocGoal))
         {
             this.logger = logger;
             this.input = input;
@@ -36,57 +37,91 @@ namespace Core.Goals
             this.castingHandler = castingHandler;
             this.mountHandler = mountHandler;
 
-            dangerCombat = () => addonReader.PlayerReader.Bits.PlayerInCombat &&
-                addonReader.CombatCreatureCount > 0;
-
-            if (key.InCombat == "false")
+            if (bool.TryParse(key.InCombat, out bool result))
             {
-                AddPrecondition(GoapKey.incombat, false);
-            }
-            else if (key.InCombat == "true")
-            {
-                AddPrecondition(GoapKey.incombat, true);
+                AddPrecondition(GoapKey.incombat, result);
+                combatMatters = result;
             }
 
-            Keys.Add(key);
+            Keys = new KeyAction[1] { key };
         }
 
-        public override bool CheckIfActionCanRun() => key.CanRun();
+        public override bool CanRun() => key.CanRun();
 
-        public override ValueTask OnEnter()
+        public override void OnEnter()
         {
             if (mountHandler.IsMounted())
             {
                 mountHandler.Dismount();
-                wait.Update(1);
+                wait.Update();
             }
 
-            castingHandler.CastIfReady(key, dangerCombat);
+            castingHandler.UpdateGCD(true);
+        }
 
-            bool wasDrinkingOrEating = playerReader.Buffs.Drinking || playerReader.Buffs.Eating;
+        public override void OnExit()
+        {
+            castSuccess = false;
+        }
+
+        public override void Update()
+        {
+            if (castingHandler.SpellInQueue())
+            {
+                wait.Update();
+                return;
+            }
+
+            if (!castSuccess || (key.Charge > 1 && key.CanRun()))
+            {
+                Cast();
+                wait.Update();
+            }
+        }
+
+        private bool Interrupt()
+        {
+            return combatMatters.HasValue
+                ? combatMatters.Value == addonReader.PlayerReader.Bits.PlayerInCombat() && addonReader.DamageTakenCount > 0
+                : addonReader.DamageTakenCount > 0;
+        }
+
+        private void Cast()
+        {
+            if (!castingHandler.CastIfReady(key, Interrupt))
+            {
+                if (Interrupt())
+                {
+                    castSuccess = true;
+                }
+
+                return;
+            }
+
+            bool wasDrinkingOrEating = playerReader.Buffs.Drink() || playerReader.Buffs.Food();
 
             DateTime startTime = DateTime.UtcNow;
 
-            while ((playerReader.Buffs.Drinking || playerReader.Buffs.Eating || playerReader.IsCasting) && !dangerCombat())
+            while ((playerReader.Buffs.Drink() || playerReader.Buffs.Food() || playerReader.IsCasting()) && !Interrupt())
             {
-                wait.Update(1);
+                wait.Update();
 
-                if (playerReader.Buffs.Drinking)
+                if (playerReader.Buffs.Drink())
                 {
-                    if (playerReader.ManaPercentage > 98) { break; }
+                    if (playerReader.ManaPercentage() > 98) { break; }
                 }
-                else if (playerReader.Buffs.Eating && !key.Requirement.Contains("Well Fed"))
+                else if (playerReader.Buffs.Food() && !key.Requirements.Contains("Well Fed"))
                 {
-                    if (playerReader.HealthPercent > 98) { break; }
+                    if (playerReader.HealthPercent() > 98) { break; }
                 }
                 else if (!key.CanRun())
                 {
                     break;
                 }
 
-                if ((DateTime.UtcNow - startTime).TotalSeconds > 25)
+                if ((DateTime.UtcNow - startTime).TotalSeconds > 30)
                 {
-                    logger.LogInformation($"Waited (25s) long enough for {key.Name}");
+                    logger.LogInformation($"Waited (30s) long enough for {key.Name}");
                     break;
                 }
             }
@@ -96,19 +131,7 @@ namespace Core.Goals
                 input.Stop();
             }
 
-            wait.Update(1);
-            return base.OnEnter();
-        }
-
-        public override ValueTask PerformAction()
-        {
-            if (castingHandler.CanRun(key) && key.Charge > 1)
-            {
-                castingHandler.CastIfReady(key);
-            }
-
-            wait.Update(1);
-            return ValueTask.CompletedTask;
+            castSuccess = true;
         }
     }
 }

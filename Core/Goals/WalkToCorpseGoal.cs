@@ -3,13 +3,12 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
-using System.Threading.Tasks;
 
 namespace Core.Goals
 {
-    public partial class WalkToCorpseGoal : GoapGoal, IRouteProvider
+    public partial class WalkToCorpseGoal : GoapGoal, IGoapEventListener, IRouteProvider, IDisposable
     {
-        public override float CostOfPerformingAction => 1f;
+        public override float Cost => 1f;
 
         private readonly ILogger logger;
         private readonly Wait wait;
@@ -48,6 +47,7 @@ namespace Core.Goals
         #endregion
 
         public WalkToCorpseGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving)
+            : base(nameof(WalkToCorpseGoal))
         {
             this.logger = logger;
             this.wait = wait;
@@ -62,20 +62,25 @@ namespace Core.Goals
             AddPrecondition(GoapKey.isdead, true);
         }
 
-        public override void OnActionEvent(object sender, ActionEventArgs e)
+        public void Dispose()
         {
-            if (e.Key == GoapKey.resume)
+            navigation.Dispose();
+        }
+
+        public void OnGoapEvent(GoapEventArgs e)
+        {
+            if (e is ResumeEvent)
             {
                 navigation.ResetStuckParameters();
             }
         }
 
-        public override ValueTask OnEnter()
+        public override void OnEnter()
         {
             playerReader.ZCoord = 0;
             addonReader.PlayerDied();
 
-            wait.While(() => playerReader.CorpseLocation == Vector3.Zero);
+            wait.While(AliveOrLoadingScreen);
             Log($"Player teleported to the graveyard!");
 
             var corpseLocation = playerReader.CorpseLocation;
@@ -83,23 +88,20 @@ namespace Core.Goals
 
             Deaths.Add(corpseLocation);
 
-            navigation.SetWayPoints(new() { corpseLocation });
+            navigation.SetWayPoints(new Vector3[] { corpseLocation });
 
             onEnterTime = DateTime.UtcNow;
-
-            return base.OnEnter();
         }
 
-        public override ValueTask OnExit()
+        public override void OnExit()
         {
+            navigation.StopMovement();
             navigation.Stop();
-
-            return base.OnExit();
         }
 
-        public override ValueTask PerformAction()
+        public override void Update()
         {
-            if (!playerReader.Bits.IsCorpseInRange)
+            if (!playerReader.Bits.IsCorpseInRange())
             {
                 navigation.Update();
             }
@@ -111,9 +113,7 @@ namespace Core.Goals
 
             RandomJump();
 
-            wait.Update(1);
-
-            return ValueTask.CompletedTask;
+            wait.Update();
         }
 
         private void RandomJump()
@@ -123,6 +123,11 @@ namespace Core.Goals
                 Log("Random jump");
                 input.Jump();
             }
+        }
+
+        private bool AliveOrLoadingScreen()
+        {
+            return playerReader.CorpseLocation == Vector3.Zero;
         }
 
         private void Log(string text)

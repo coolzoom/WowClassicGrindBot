@@ -6,18 +6,19 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Threading;
-using System.Threading.Tasks;
 using SharedLib.Extensions;
 
 #pragma warning disable 162
 
 namespace Core.Goals
 {
-    public class FollowRouteGoal : GoapGoal, IRouteProvider, IDisposable
+    public class FollowRouteGoal : GoapGoal, IGoapEventListener, IRouteProvider, IEditedRouteReceiver, IDisposable
     {
-        public override float CostOfPerformingAction => 20f;
+        public override float Cost => 20f;
 
         private const bool debug = false;
+
+        private const double DELAY_BEFORE_TARGET_SEARCH = 300;
 
         private readonly ILogger logger;
         private readonly ConfigurableInput input;
@@ -28,17 +29,20 @@ namespace Core.Goals
         private readonly ClassConfiguration classConfig;
         private readonly MountHandler mountHandler;
         private readonly Navigation navigation;
-        private readonly List<Vector3> routePoints;
 
+        private readonly IBlacklist blacklist;
         private readonly TargetFinder targetFinder;
-        private readonly int minMs = 500, maxMs = 1000;
-        private readonly NpcNames NpcNameToFind = NpcNames.Enemy | NpcNames.Neutral;
+        private const int minMs = 500, maxMs = 1000;
+        private const NpcNames NpcNameToFind = NpcNames.Enemy | NpcNames.Neutral;
 
         private const int MIN_TIME_TO_START_CYCLE_PROFESSION = 5000;
         private const int CYCLE_PROFESSION_PERIOD = 8000;
 
+        private readonly ManualResetEvent sideActivityManualReset;
+        private readonly Thread? sideActivityThread;
         private CancellationTokenSource sideActivityCts;
-        private Thread sideActivityThread = null!;
+
+        private Vector3[] route;
 
         private bool shouldMount;
 
@@ -68,7 +72,8 @@ namespace Core.Goals
         #endregion
 
 
-        public FollowRouteGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, ClassConfiguration classConfig, List<Vector3> points, Navigation navigation, MountHandler mountHandler, NpcNameFinder npcNameFinder, TargetFinder targetFinder)
+        public FollowRouteGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, ClassConfiguration classConfig, Vector3[] route, Navigation navigation, MountHandler mountHandler, NpcNameFinder npcNameFinder, TargetFinder targetFinder, IBlacklist blacklist)
+            : base(nameof(FollowRouteGoal))
         {
             this.logger = logger;
             this.input = input;
@@ -77,47 +82,82 @@ namespace Core.Goals
             this.addonReader = addonReader;
             this.classConfig = classConfig;
             this.playerReader = addonReader.PlayerReader;
-            this.routePoints = points;
+            this.route = route;
             this.npcNameFinder = npcNameFinder;
             this.mountHandler = mountHandler;
             this.targetFinder = targetFinder;
+            this.blacklist = blacklist;
 
             this.navigation = navigation;
             navigation.OnPathCalculated += Navigation_OnPathCalculated;
             navigation.OnDestinationReached += Navigation_OnDestinationReached;
             navigation.OnWayPointReached += Navigation_OnWayPointReached;
 
-            AddPrecondition(GoapKey.dangercombat, false);
-
             if (classConfig.Mode == Mode.AttendedGather)
             {
+                AddPrecondition(GoapKey.dangercombat, false);
                 navigation.OnAnyPointReached += Navigation_OnWayPointReached;
             }
             else
             {
+                if (classConfig.Loot)
+                {
+                    AddPrecondition(GoapKey.incombat, false);
+                }
+
+                AddPrecondition(GoapKey.damagedone, false);
+                AddPrecondition(GoapKey.damagetaken, false);
+
                 AddPrecondition(GoapKey.producedcorpse, false);
                 AddPrecondition(GoapKey.consumecorpse, false);
             }
 
-            sideActivityCts = new CancellationTokenSource();
+            sideActivityCts = new();
+            sideActivityManualReset = new(false);
+
+            if (classConfig.Mode == Mode.AttendedGather)
+            {
+                if (classConfig.GatherFindKeyConfig.Length > 1)
+                {
+                    sideActivityThread = new(Thread_AttendedGather);
+                    sideActivityThread.Start();
+                }
+            }
+            else
+            {
+                sideActivityThread = new(Thread_LookingForTarget);
+                sideActivityThread.Start();
+            }
         }
 
         public void Dispose()
         {
-            sideActivityCts.Dispose();
+            navigation.Dispose();
+
+            sideActivityCts.Cancel();
+            sideActivityManualReset.Set();
         }
 
         private void Abort()
         {
-            sideActivityCts.Cancel();
+            if (!blacklist.IsTargetBlacklisted())
+                navigation.StopMovement();
+
             navigation.Stop();
+
+            sideActivityManualReset.Reset();
+            targetFinder.Reset();
         }
 
         private void Resume()
         {
             onEnterTime = DateTime.UtcNow;
 
-            StartSideActivity();
+            if (sideActivityCts.IsCancellationRequested)
+            {
+                sideActivityCts = new();
+            }
+            sideActivityManualReset.Set();
 
             if (!navigation.HasWaypoint())
             {
@@ -138,104 +178,84 @@ namespace Core.Goals
             }
         }
 
-        public override void OnActionEvent(object sender, ActionEventArgs e)
+        public void OnGoapEvent(GoapEventArgs e)
         {
-            if (e.Key == GoapKey.abort)
+            if (e is AbortEvent)
             {
                 Abort();
             }
-
-            if (e.Key == GoapKey.resume)
+            else if (e is ResumeEvent)
             {
                 Resume();
             }
         }
 
-        public override ValueTask OnEnter()
-        {
-            Resume();
-            return base.OnEnter();
-        }
+        public override void OnEnter() => Resume();
 
-        public override ValueTask OnExit()
-        {
-            Abort();
-            return base.OnExit();
-        }
+        public override void OnExit() => Abort();
 
-        public override ValueTask PerformAction()
+        public override void Update()
         {
-            if (playerReader.HasTarget && playerReader.Bits.TargetIsDead)
+            if (playerReader.Bits.HasTarget() && playerReader.Bits.TargetIsDead())
             {
                 Log("Has target but its dead.");
                 input.ClearTarget();
-                wait.Update(1);
+                wait.Update();
             }
 
-            if (playerReader.Bits.IsDrowning)
+            if (playerReader.Bits.IsDrowning())
             {
-                //Log("Drowning! Swim up");
                 input.Jump();
             }
 
-            if (playerReader.Bits.PlayerInCombat && classConfig.Mode != Mode.AttendedGather) { return ValueTask.CompletedTask; }
+            if (playerReader.Bits.PlayerInCombat() && classConfig.Mode != Mode.AttendedGather) { return; }
 
-            navigation.Update(sideActivityCts);
+            if (!sideActivityCts.IsCancellationRequested)
+                navigation.Update(sideActivityCts);
 
             RandomJump();
 
-            wait.Update(1);
-
-            return ValueTask.CompletedTask;
-        }
-
-        private void StartSideActivity()
-        {
-            sideActivityCts.Dispose();
-            sideActivityCts = new CancellationTokenSource();
-
-            if (classConfig.Mode == Mode.AttendedGather)
-            {
-                if (classConfig.GatherFindKeyConfig.Count > 1)
-                {
-                    sideActivityThread = new Thread(Thread_AttendedGather);
-                    sideActivityThread.Start();
-                }
-            }
-            else
-            {
-                sideActivityThread = new Thread(Thread_LookingForTarget);
-                sideActivityThread.Start();
-            }
+            wait.Update();
         }
 
         private void Thread_LookingForTarget()
         {
-            Log("Start searching for target...");
-
-            Func<bool> validTarget = () =>
-                playerReader.HasTarget &&
-                !playerReader.Bits.TargetIsDead;
-
-            bool found = false;
-            while (!found && !sideActivityCts.IsCancellationRequested)
+            bool validTarget()
             {
-                if (classConfig.TargetNearestTarget.MillisecondsSinceLastClick > random.Next(minMs, maxMs))
+                return !playerReader.Bits.TargetIsDead();
+            }
+
+            sideActivityManualReset.WaitOne();
+
+            while (!sideActivityCts.IsCancellationRequested)
+            {
+                wait.Update();
+
+                if (!input.Proc.IsKeyDown(input.Proc.TurnLeftKey) &&
+                    !input.Proc.IsKeyDown(input.Proc.TurnRightKey) &&
+                    classConfig.TargetNearestTarget.MillisecondsSinceLastClick > random.Next(minMs, maxMs) &&
+                    targetFinder.Search(NpcNameToFind, validTarget, sideActivityCts))
                 {
-                    found = targetFinder.Search(NpcNameToFind, validTarget, sideActivityCts);
+                    sideActivityCts.Cancel();
+                    sideActivityManualReset.Reset();
                 }
-                wait.Update(1);
+
+                sideActivityManualReset.WaitOne();
+
+                while ((DateTime.UtcNow - onEnterTime).TotalMilliseconds < DELAY_BEFORE_TARGET_SEARCH)
+                {
+                    sideActivityManualReset.WaitOne();
+                }
             }
 
-            if (found)
-            {
-                sideActivityCts.Cancel();
-                Log("Found target!");
-            }
+            if (logger.IsEnabled(LogLevel.Debug))
+                logger.LogDebug("LookingForTarget thread stopped!");
         }
 
         private void Thread_AttendedGather()
         {
+            sideActivityManualReset.WaitOne();
+
             while (!sideActivityCts.IsCancellationRequested)
             {
                 if ((DateTime.UtcNow - onEnterTime).TotalMilliseconds > MIN_TIME_TO_START_CYCLE_PROFESSION)
@@ -243,17 +263,21 @@ namespace Core.Goals
                     AlternateGatherTypes();
                 }
                 sideActivityCts.Token.WaitHandle.WaitOne(CYCLE_PROFESSION_PERIOD);
+                sideActivityManualReset.WaitOne();
             }
+
+            if (logger.IsEnabled(LogLevel.Debug))
+                logger.LogDebug("AttendedGather thread stopped!");
         }
 
         private void AlternateGatherTypes()
         {
             var oldestKey = classConfig.GatherFindKeyConfig.MaxBy(x => x.MillisecondsSinceLastClick);
-            if (!playerReader.IsCasting &&
+            if (!playerReader.IsCasting() &&
                 oldestKey?.MillisecondsSinceLastClick > CYCLE_PROFESSION_PERIOD)
             {
                 logger.LogInformation($"[{oldestKey.Key}] {oldestKey.Name} pressed for {input.defaultKeyPress}ms");
-                input.KeyPress(oldestKey.ConsoleKey, input.defaultKeyPress);
+                input.Proc.KeyPress(oldestKey.ConsoleKey, input.defaultKeyPress);
                 oldestKey.SetClicked();
             }
         }
@@ -272,18 +296,19 @@ namespace Core.Goals
 
         #region Refill rules
 
-        private void Navigation_OnPathCalculated(object? sender, EventArgs e)
+        private void Navigation_OnPathCalculated()
         {
             MountIfRequired();
         }
 
-        private void Navigation_OnDestinationReached(object? sender, EventArgs e)
+        private void Navigation_OnDestinationReached()
         {
-            LogDebug("Navigation_OnDestinationReached");
+            if (debug)
+                LogDebug("Navigation_OnDestinationReached");
             RefillWaypoints(false);
         }
 
-        private void Navigation_OnWayPointReached(object? sender, EventArgs e)
+        private void Navigation_OnWayPointReached()
         {
             if (classConfig.Mode == Mode.AttendedGather)
             {
@@ -297,27 +322,30 @@ namespace Core.Goals
         {
             Log($"RefillWaypoints - findClosest:{onlyClosest} - ThereAndBack:{input.ClassConfig.PathThereAndBack}");
 
-            var player = playerReader.PlayerLocation;
-            var path = routePoints.ToList();
+            Vector3 player = playerReader.PlayerLocation;
+            Vector3[] path = route.ToArray();
 
-            var distanceToFirst = player.DistanceXYTo(path[0]);
-            var distanceToLast = player.DistanceXYTo(path[^1]);
+            float distanceToFirst = player.DistanceXYTo(path[0]);
+            float distanceToLast = player.DistanceXYTo(path[^1]);
 
             if (distanceToLast < distanceToFirst)
             {
-                path.Reverse();
+                Array.Reverse(path);
             }
 
-            var closestPoint = path.ToList().OrderBy(p => player.DistanceXYTo(p)).First();
+            var closestPoint = path.OrderBy(p => player.DistanceXYTo(p)).First();
             if (onlyClosest)
             {
-                var closestPath = new List<Vector3> { closestPoint };
-                LogDebug($"RefillWaypoints: Closest wayPoint: {closestPoint}");
+                var closestPath = new Vector3[] { closestPoint };
+
+                if (debug)
+                    LogDebug($"RefillWaypoints: Closest wayPoint: {closestPoint}");
                 navigation.SetWayPoints(closestPath);
+
                 return;
             }
 
-            int closestIndex = path.IndexOf(closestPoint);
+            int closestIndex = Array.IndexOf(path, closestPoint);
             if (closestPoint == path[0] || closestPoint == path[^1])
             {
                 if (input.ClassConfig.PathThereAndBack)
@@ -326,20 +354,25 @@ namespace Core.Goals
                 }
                 else
                 {
-                    path.Reverse();
+                    Array.Reverse(path);
                     navigation.SetWayPoints(path);
                 }
             }
             else
             {
-                var points = path.Take(closestIndex).ToList();
-                points.Reverse();
-                Log($"RefillWaypoints - Set destination from closest to nearest endpoint - with {points.Count} waypoints");
+                Vector3[] points = path.Take(closestIndex).ToArray();
+                Array.Reverse(points);
+                Log($"RefillWaypoints - Set destination from closest to nearest endpoint - with {points.Length} waypoints");
                 navigation.SetWayPoints(points);
             }
         }
 
         #endregion
+
+        public void ReceivePath(Vector3[] newRoute)
+        {
+            route = newRoute;
+        }
 
         private void RandomJump()
         {
@@ -352,10 +385,7 @@ namespace Core.Goals
 
         private void LogDebug(string text)
         {
-            if (debug)
-            {
-                logger.LogDebug($"{nameof(FollowRouteGoal)}: {text}");
-            }
+            logger.LogDebug($"{nameof(FollowRouteGoal)}: {text}");
         }
 
         private void Log(string text)

@@ -1,7 +1,6 @@
 ﻿using Core.GOAP;
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using Core.Session;
 using Game;
 
@@ -9,45 +8,27 @@ namespace Core
 {
     public class ConfigBotController : IBotController
     {
-        public DataConfig DataConfig => throw new NotImplementedException();
         public AddonReader AddonReader => throw new NotImplementedException();
-        public Thread? screenshotThread => throw new NotImplementedException();
-        public Thread addonThread => throw new NotImplementedException();
-        public Thread? botThread { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public GoapAgent? GoapAgent { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public RouteInfo? RouteInfo { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public GoapAgent? GoapAgent => throw new NotImplementedException();
+        public RouteInfo? RouteInfo => throw new NotImplementedException();
         public WowScreen WowScreen => throw new NotImplementedException();
-        public WowProcessInput WowProcessInput => throw new NotImplementedException();
-        public ConfigurableInput? ConfigurableInput { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public IGrindSession GrindSession => throw new NotImplementedException();
-        public IGrindSessionHandler GrindSessionHandler => throw new NotImplementedException();
-        public string SelectedClassFilename { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string? SelectedPathFilename { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public IGrindSessionDAO GrindSessionDAO => throw new NotImplementedException();
+        public string SelectedClassFilename => throw new NotImplementedException();
+        public string? SelectedPathFilename => throw new NotImplementedException();
+
+        public ClassConfiguration? ClassConfig => null;
 
         public bool IsBotActive => false;
-
-        public IImageProvider? MinimapImageFinder => throw new NotImplementedException();
-        public ClassConfiguration? ClassConfig { get => null; set => throw new NotImplementedException(); }
-
-        public ActionBarPopulator? ActionBarPopulator { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public ExecGameCommand ExecGameCommand => throw new NotImplementedException();
-
-        public event EventHandler? ProfileLoaded;
-        public event EventHandler? StatusChanged;
 
         public double AvgScreenLatency => throw new NotImplementedException();
         public double AvgNPCLatency => throw new NotImplementedException();
 
+        public event Action? ProfileLoaded;
+        public event Action? StatusChanged;
+
         public void Shutdown()
         {
 
-        }
-
-        public void StopBot()
-        {
-            StatusChanged?.Invoke(this, EventArgs.Empty);
-            throw new NotImplementedException();
         }
 
         public void MinimapNodeFound()
@@ -57,28 +38,29 @@ namespace Core
 
         public void ToggleBotStatus()
         {
+            StatusChanged?.Invoke();
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<string> ClassFiles()
+        {
+            throw new NotImplementedException();
+        }
+
+        public IEnumerable<string> PathFiles()
+        {
             throw new NotImplementedException();
         }
 
         public void LoadClassProfile(string classFilename)
         {
-            ProfileLoaded?.Invoke(this, EventArgs.Empty);
-            throw new NotImplementedException();
-        }
-
-        public List<string> ClassFileList()
-        {
-            throw new NotImplementedException();
-        }
-
-        public List<string> PathFileList()
-        {
+            ProfileLoaded?.Invoke();
             throw new NotImplementedException();
         }
 
         public void LoadPathProfile(string pathFilename)
         {
-            ProfileLoaded?.Invoke(this, EventArgs.Empty);
+            ProfileLoaded?.Invoke();
             throw new NotImplementedException();
         }
 

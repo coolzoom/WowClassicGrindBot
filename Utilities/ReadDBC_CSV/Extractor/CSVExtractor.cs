@@ -1,79 +1,55 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
+using CsvHelper;
 
 namespace ReadDBC_CSV
 {
     public class CSVExtractor
     {
-        public readonly List<string> ColumnIndexes = new List<string>();
+        public List<string> ColumnIndexes { get; } = new();
 
         public Action HeaderAction;
 
-        public void ExtractTemplate(string file, Action<string> extractLine)
+        public void ExtractTemplate(string file, Action<string[]> extractLine)
         {
-            var stream = File.OpenText(file);
-
-            // header
-            var line = stream.ReadLine();
-            ColumnIndexes.AddRange(line.Split(","));
-
-            HeaderAction();
-
-            // data
-            line = stream.ReadLine();
-            while (line != null)
+            using (StreamReader reader = new(file))
+            using (CsvReader csv = new(reader, CultureInfo.InvariantCulture))
             {
-                extractLine(line);
-                line = stream.ReadLine();
+                csv.Read();
+                csv.ReadHeader();
+                ColumnIndexes.AddRange(csv.HeaderRecord);
+                HeaderAction();
+
+                while (csv.Read())
+                {
+                    IDictionary<string, object> record = csv.GetRecord<dynamic>();
+                    string[] data = new string[ColumnIndexes.Count];
+                    int i = 0;
+                    foreach (KeyValuePair<string, object> r in record)
+                    {
+                        data[i++] = r.Value.ToString();
+                    }
+
+                    extractLine(data);
+                }
             }
+
         }
 
-        public int FindIndex(string v)
+        public int FindIndex(string v, int def = -1)
         {
             for (int i = 0; i < ColumnIndexes.Count; i++)
             {
-                if (ColumnIndexes[i] == v)
+                if (ColumnIndexes[i].StartsWith(v, StringComparison.OrdinalIgnoreCase))
                 {
                     return i;
                 }
             }
-            throw new ArgumentOutOfRangeException(v);
-        }
-
-        public static string[] SplitQuotes(string csvText)
-        {
-            List<string> tokens = new List<string>();
-
-            int last = -1;
-            int current = 0;
-            bool inText = false;
-
-            while (current < csvText.Length)
-            {
-                switch (csvText[current])
-                {
-                    case '"':
-                        inText = !inText; break;
-                    case ',':
-                        if (!inText)
-                        {
-                            tokens.Add(csvText.Substring(last + 1, (current - last)).Trim(' ', ','));
-                            last = current;
-                        }
-                        break;
-                    default:
-                        break;
-                }
-                current++;
-            }
-
-            if (last != csvText.Length - 1)
-            {
-                tokens.Add(csvText.Substring(last + 1).Trim());
-            }
-
-            return tokens.ToArray();
+            Console.WriteLine($"  WARN '{v}' not found using {def}");
+            return def;
+            //throw new ArgumentOutOfRangeException(v);
         }
     }
 }

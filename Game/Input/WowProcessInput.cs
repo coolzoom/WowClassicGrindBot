@@ -11,39 +11,46 @@ namespace Game
 {
     public partial class WowProcessInput : IMouseInput
     {
-        public const bool LogInput = false;
+        private const bool LogInput = false;
+        private const bool LogMove = false;
 
         private const int MIN_DELAY = 25;
         private const int MAX_DELAY = 55;
 
         protected readonly ILogger logger;
+
         private readonly WowProcess wowProcess;
-        private readonly IInput nativeInput;
+        private readonly InputWindowsNative nativeInput;
         private readonly IInput simulatorInput;
 
         private readonly Dictionary<ConsoleKey, bool> keyDownDict = new();
+
+        public ConsoleKey ForwardKey { get; set; }
+        public ConsoleKey BackwardKey { get; set; }
+        public ConsoleKey TurnLeftKey { get; set; }
+        public ConsoleKey TurnRightKey { get; set; }
 
         public WowProcessInput(ILogger logger, WowProcess wowProcess)
         {
             this.logger = logger;
             this.wowProcess = wowProcess;
 
-            this.nativeInput = new InputWindowsNative(wowProcess.WarcraftProcess, MIN_DELAY, MAX_DELAY);
-            this.simulatorInput = new InputSimulator(wowProcess.WarcraftProcess, MIN_DELAY, MAX_DELAY);
+            nativeInput = new InputWindowsNative(wowProcess, MIN_DELAY, MAX_DELAY);
+            simulatorInput = new InputSimulator(wowProcess, MIN_DELAY, MAX_DELAY);
         }
 
         public void Reset()
         {
             lock (keyDownDict)
             {
-                foreach (var kvp in keyDownDict)
+                foreach (KeyValuePair<ConsoleKey, bool> kvp in keyDownDict)
                 {
                     keyDownDict[kvp.Key] = false;
                 }
             }
         }
 
-        private void KeyDown(ConsoleKey key, bool forced)
+        public void KeyDown(ConsoleKey key, bool forced)
         {
             if (IsKeyDown(key))
             {
@@ -52,13 +59,23 @@ namespace Game
             }
 
             if (LogInput)
-                LogKeyDown(logger, key);
+            {
+                if (key == ForwardKey || key == BackwardKey || key == TurnLeftKey || key == TurnRightKey)
+                {
+                    if (LogMove)
+                        LogKeyDown(logger, key);
+                }
+                else
+                {
+                    LogKeyDown(logger, key);
+                }
+            }
 
             keyDownDict[key] = true;
             nativeInput.KeyDown((int)key);
         }
 
-        private void KeyUp(ConsoleKey key, bool forced)
+        public void KeyUp(ConsoleKey key, bool forced)
         {
             if (!IsKeyDown(key))
             {
@@ -67,7 +84,17 @@ namespace Game
             }
 
             if (LogInput)
-                LogKeyUp(logger, key);
+            {
+                if (key == ForwardKey || key == BackwardKey || key == TurnLeftKey || key == TurnRightKey)
+                {
+                    if (LogMove)
+                        LogKeyUp(logger, key);
+                }
+                else
+                {
+                    LogKeyUp(logger, key);
+                }
+            }
 
             nativeInput.KeyUp((int)key);
             keyDownDict[key] = false;
@@ -75,14 +102,17 @@ namespace Game
 
         public bool IsKeyDown(ConsoleKey key)
         {
-            if (keyDownDict.TryGetValue(key, out bool down))
-                return down;
-            return false;
+            return keyDownDict.TryGetValue(key, out bool down) && down;
         }
 
         public void SendText(string payload)
         {
             simulatorInput.SendText(payload);
+        }
+
+        public void SetClipboard(string text)
+        {
+            simulatorInput.SetClipboard(text);
         }
 
         public void PasteFromClipboard()
@@ -92,19 +122,21 @@ namespace Game
 
         public void SetForegroundWindow()
         {
-            NativeMethods.SetForegroundWindow(wowProcess.WarcraftProcess.MainWindowHandle);
+            NativeMethods.SetForegroundWindow(wowProcess.Process.MainWindowHandle);
         }
 
-
-        public void KeyPress(ConsoleKey key, int milliseconds)
+        public int KeyPress(ConsoleKey key, int milliseconds)
         {
             keyDownDict[key] = true;
             int totalElapsedMs = nativeInput.KeyPress((int)key, milliseconds);
             keyDownDict[key] = false;
+            
             if (LogInput)
             {
                 LogKeyPress(logger, key, totalElapsedMs);
             }
+
+            return totalElapsedMs;
         }
 
         public void KeyPressSleep(ConsoleKey key, int milliseconds, CancellationTokenSource cts)
@@ -114,7 +146,15 @@ namespace Game
 
             if (LogInput)
             {
-                LogKeyPress(logger, key, milliseconds);
+                if (key == ForwardKey || key == BackwardKey || key == TurnLeftKey || key == TurnRightKey)
+                {
+                    if (LogMove)
+                        LogKeyPress(logger, key, milliseconds);
+                }
+                else
+                {
+                    LogKeyPress(logger, key, milliseconds);
+                }
             }
 
             keyDownDict[key] = true;
@@ -127,19 +167,19 @@ namespace Game
             if (pressDown) { KeyDown(key, forced); } else { KeyUp(key, forced); }
         }
 
-        public void SetCursorPosition(Point position)
+        public void SetCursorPosition(Point p)
         {
-            nativeInput.SetCursorPosition(position);
+            nativeInput.SetCursorPosition(p);
         }
 
-        public void RightClickMouse(Point position)
+        public void RightClickMouse(Point p)
         {
-            nativeInput.RightClickMouse(position);
+            nativeInput.RightClickMouse(p);
         }
 
-        public void LeftClickMouse(Point position)
+        public void LeftClickMouse(Point p)
         {
-            nativeInput.LeftClickMouse(position);
+            nativeInput.LeftClickMouse(p);
         }
 
         [LoggerMessage(

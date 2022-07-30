@@ -1,72 +1,100 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
 
 #nullable enable
 
 namespace Game
 {
-    public class WowProcess
+    public class WowProcess : IDisposable
     {
-        private Process _warcraftProcess;
-        public Process WarcraftProcess
+        private static readonly string[] defaultProcessNames = new string[] {
+            "Wow",
+            "WowClassic",
+            "WowClassicT",
+            "Wow-64",
+            "WowClassicB"
+        };
+
+        private readonly Thread thread;
+        private readonly CancellationTokenSource cts;
+
+        public Process Process { get; private set; }
+
+        private int processId = -1;
+        public int ProcessId
         {
-            get
+            get => processId;
+            set
             {
-                if (this._warcraftProcess == null)
-                {
-                    var process = Get();
-                    if (process == null)
-                    {
-                        throw new ArgumentOutOfRangeException("Unable to find the Wow process");
-                    }
-
-                    if (process.MainWindowHandle == IntPtr.Zero)
-                    {
-                        throw new NullReferenceException($"Unable read {nameof(process.MainWindowHandle)} {process.ProcessName} - {process.Id} - {process.Handle}");
-                    }
-
-                    this._warcraftProcess = process;
-                }
-
-                return this._warcraftProcess;
+                processId = value;
+                Process = Process.GetProcessById(processId);
             }
         }
 
-        private static readonly List<string> defaultProcessNames = 
-            new List<string> { "Wow", "WowClassic", "WowClassicT", "Wow-64", "WowClassicB" };
+        public bool IsRunning { get; private set; }
 
-        public WowProcess()
+        public WowProcess(int pid = -1)
         {
-            var process = Get();
-            if (process == null)
-            {
-                throw new ArgumentOutOfRangeException("Unable to find the Wow process");
-            }
+            Process? p = Get(pid);
+            if (p == null)
+                throw new NullReferenceException("Unable to find running World of Warcraft process!");
 
-            if (process.MainWindowHandle == IntPtr.Zero)
-            {
-                throw new NullReferenceException($"Unable read {nameof(process.MainWindowHandle)} {process.ProcessName} - {process.Id} - {process.Handle}");
-            }
+            Process = p;
+            processId = Process.Id;
+            IsRunning = true;
 
-            this._warcraftProcess = process;
+            cts = new();
+            thread = new(PollProcessExited);
+            thread.Start();
         }
 
-        //Get the wow-process, if success returns the process else null
-        public static Process? Get(string name = "")
+        public void Dispose()
         {
-            var names = string.IsNullOrEmpty(name) ? defaultProcessNames : new List<string> { name };
+            cts.Cancel();
+        }
 
-            var processList = Process.GetProcesses();
-            foreach (var p in processList)
+        private void PollProcessExited()
+        {
+            while (!cts.IsCancellationRequested)
             {
-                if (names.Contains(p.ProcessName))
+                Process.Refresh();
+                if (Process.HasExited)
                 {
-                    return p;
+                    IsRunning = false;
+
+                    Process? p = Get();
+                    if (p != null)
+                    {
+                        Process = p;
+                        processId = Process.Id;
+                        IsRunning = true;
+                    }
                 }
+
+                cts.Token.WaitHandle.WaitOne(5000);
+            }
+        }
+
+        public static Process? Get(int processId = -1)
+        {
+            if (processId != -1)
+            {
+                return Process.GetProcessById(processId);
             }
 
-            //logger.Error($"Failed to find the wow process, tried: {string.Join(", ", names)}");
+            Process[] processList = Process.GetProcesses();
+            for (int i = 0; i < processList.Length; i++)
+            {
+                Process p = processList[i];
+                for (int j = 0; j < defaultProcessNames.Length; j++)
+                {
+                    if (defaultProcessNames[j].Contains(p.ProcessName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return p;
+                    }
+                }
+            }
 
             return null;
         }

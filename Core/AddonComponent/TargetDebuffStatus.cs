@@ -1,55 +1,69 @@
-﻿namespace Core
+﻿using System.Collections.Specialized;
+
+namespace Core
 {
-    public class TargetDebuffStatus : BitStatus
+    public class TargetDebuffStatus
     {
-        private readonly ISquareReader reader;
         private readonly int cell;
 
-        public TargetDebuffStatus(ISquareReader reader, int cell) : base(reader.GetIntAtCell(cell))
+        private BitVector32 v;
+
+        public TargetDebuffStatus(int cell)
         {
-            this.reader = reader;
             this.cell = cell;
         }
 
-        public void SetDirty()
+        public void Update(AddonDataProvider reader)
         {
-            Update(reader.GetIntAtCell(cell));
+            v = new(reader.GetInt(cell));
+        }
+
+        public override string ToString()
+        {
+            return string.Empty;
         }
 
         // Priest
-        public bool ShadowWordPain => IsBitSet(0);
+        public bool ShadowWordPain() => v[Mask._0];
 
         // Druid
-        public bool Roar => IsBitSet(0);
-        public bool FaerieFire => IsBitSet(1);
-        public bool Rip => IsBitSet(2);
-        public bool Moonfire => IsBitSet(3);
-        public bool EntanglingRoots => IsBitSet(4);
-        public bool Rake => IsBitSet(5);
+        public bool Roar() => v[Mask._0];
+        public bool FaerieFire() => v[Mask._1];
+        public bool Rip() => v[Mask._2];
+        public bool Moonfire() => v[Mask._3];
+        public bool EntanglingRoots() => v[Mask._4];
+        public bool Rake() => v[Mask._5];
 
         // Paladin
-        public bool JudgementoftheCrusader => IsBitSet(0);
-        public bool HammerOfJustice => IsBitSet(1);
+        public bool JudgementoftheCrusader() => v[Mask._0];
+        public bool HammerOfJustice() => v[Mask._1];
+        public bool JudgementofWisdom() => v[Mask._2];
 
         // Mage
-        public bool Frostbite => IsBitSet(0);
-        public bool Slow => IsBitSet(1);
+        public bool Frostbite() => v[Mask._0];
+        public bool Slow() => v[Mask._1];
 
         // Rogue
 
         // Warrior
-        public bool Rend => IsBitSet(0);
-        public bool ThunderClap => IsBitSet(1);
-        public bool Hamstring => IsBitSet(2);
-        public bool ChargeStun => IsBitSet(3);
+        public bool Rend() => v[Mask._0];
+        public bool ThunderClap() => v[Mask._1];
+        public bool Hamstring() => v[Mask._2];
+        public bool ChargeStun() => v[Mask._3];
 
         // Warlock
-        public bool Curseof => IsBitSet(0);
-        public bool Corruption => IsBitSet(1);
-        public bool Immolate => IsBitSet(2);
-        public bool SiphonLife => IsBitSet(3);
+        public bool Curseof() => v[Mask._0];
+        public bool Corruption() => v[Mask._1];
+        public bool Immolate() => v[Mask._2];
+        public bool SiphonLife() => v[Mask._3];
 
         // Hunter
-        public bool SerpentSting => IsBitSet(0);
+        public bool SerpentSting() => v[Mask._0];
+
+        // Death Knight
+        public bool BloodPlague() => v[Mask._0];
+        public bool FrostFever() => v[Mask._1];
+        public bool Strangulate() => v[Mask._2];
+        public bool ChainsofIce() => v[Mask._3];
     }
 }

@@ -3,7 +3,6 @@ using SharedLib.NpcFinder;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Numerics;
 using System.Linq;
 using System.Threading;
@@ -12,7 +11,7 @@ using System.Threading;
 
 namespace Core.Goals
 {
-    public class AdhocNPCGoal : GoapGoal, IRouteProvider
+    public class AdhocNPCGoal : GoapGoal, IGoapEventListener, IRouteProvider, IDisposable
     {
         private enum PathState
         {
@@ -21,9 +20,9 @@ namespace Core.Goals
             Finished,
         }
 
-        private PathState pathState;
-
         private const bool debug = false;
+
+        public override float Cost => key.Cost;
 
         private readonly ILogger logger;
         private readonly ConfigurableInput input;
@@ -35,7 +34,6 @@ namespace Core.Goals
         private readonly StopMoving stopMoving;
         private readonly ClassConfiguration classConfig;
         private readonly NpcNameTargeting npcNameTargeting;
-        private readonly IBlacklist blacklist;
         private readonly MountHandler mountHandler;
 
         private readonly ExecGameCommand execGameCommand;
@@ -45,8 +43,7 @@ namespace Core.Goals
 
         private bool shouldMount;
 
-        public override string Name => Keys.Count == 0 ? base.Name : $"{base.Name} ({Keys[0].Name})";
-        public override float CostOfPerformingAction => key.Cost;
+        private PathState pathState;
 
         #region IRouteProvider
 
@@ -69,7 +66,8 @@ namespace Core.Goals
 
         #endregion
 
-        public AdhocNPCGoal(ILogger logger, ConfigurableInput input, KeyAction key, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving, NpcNameTargeting npcNameTargeting, ClassConfiguration classConfig, IBlacklist blacklist, MountHandler mountHandler, ExecGameCommand exec)
+        public AdhocNPCGoal(KeyAction key, ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving, NpcNameTargeting npcNameTargeting, ClassConfiguration classConfig, MountHandler mountHandler, ExecGameCommand exec)
+            : base(nameof(AdhocNPCGoal))
         {
             this.logger = logger;
             this.input = input;
@@ -79,12 +77,8 @@ namespace Core.Goals
             this.playerReader = addonReader.PlayerReader;
             this.stopMoving = stopMoving;
             this.npcNameTargeting = npcNameTargeting;
-
             this.classConfig = classConfig;
-            
-            this.blacklist = blacklist;
             this.mountHandler = mountHandler;
-
             this.execGameCommand = exec;
             this.gossipReader = addonReader.GossipReader;
 
@@ -92,40 +86,38 @@ namespace Core.Goals
             navigation.OnDestinationReached += Navigation_OnDestinationReached;
             navigation.OnWayPointReached += Navigation_OnWayPointReached;
 
-            if (key.InCombat == "false")
+            if (bool.TryParse(key.InCombat, out bool result))
             {
-                AddPrecondition(GoapKey.dangercombat, false);
-            }
-            else if (key.InCombat == "true")
-            {
-                AddPrecondition(GoapKey.incombat, true);
+                if (!result)
+                    AddPrecondition(GoapKey.dangercombat, result);
+                else
+                    AddPrecondition(GoapKey.incombat, result);
             }
 
-            this.Keys.Add(key);
+            Keys = new KeyAction[] { key };
         }
 
-        public override bool CheckIfActionCanRun()
+        public void Dispose()
         {
-            return key.CanRun();
+            navigation.Dispose();
         }
 
-        public override void OnActionEvent(object sender, ActionEventArgs e)
+        public override bool CanRun() => key.CanRun();
+
+        public void OnGoapEvent(GoapEventArgs e)
         {
-            if (e.Key == GoapKey.resume)
+            if (e is ResumeEvent)
             {
                 navigation.ResetStuckParameters();
             }
         }
 
-        public override ValueTask OnEnter()
+        public override void OnEnter()
         {
-            SendActionEvent(new ActionEventArgs(GoapKey.fighting, false));
-
             input.ClearTarget();
             stopMoving.Stop();
 
-            var path = key.Path.ToList();
-            navigation.SetWayPoints(path);
+            navigation.SetWayPoints(key.Path);
 
             pathState = PathState.ApproachPathStart;
 
@@ -136,22 +128,20 @@ namespace Core.Goals
                 shouldMount = true;
                 Log("Mount up since desination far away");
             }
-
-            return base.OnEnter();
         }
 
-        public override ValueTask OnExit()
+        public override void OnExit()
         {
+            navigation.StopMovement();
             navigation.Stop();
-
-            return base.OnExit();
+            npcNameTargeting.ChangeNpcType(NpcNames.None);
         }
 
-        public override ValueTask PerformAction()
+        public override void Update()
         {
-            if (this.playerReader.Bits.PlayerInCombat && this.classConfig.Mode != Mode.AttendedGather) { return ValueTask.CompletedTask; }
+            if (playerReader.Bits.PlayerInCombat() && classConfig.Mode != Mode.AttendedGather) { return; }
 
-            if (playerReader.Bits.IsDrowning)
+            if (playerReader.Bits.IsDrowning())
             {
                 LogWarn("Drowning! Swim up");
                 input.Jump();
@@ -162,13 +152,11 @@ namespace Core.Goals
 
             MountIfRequired();
 
-            wait.Update(1);
-
-            return ValueTask.CompletedTask;
+            wait.Update();
         }
 
 
-        private void Navigation_OnWayPointReached(object? sender, EventArgs e)
+        private void Navigation_OnWayPointReached()
         {
             if (pathState is PathState.ApproachPathStart)
             {
@@ -177,7 +165,7 @@ namespace Core.Goals
             }
         }
 
-        private void Navigation_OnDestinationReached(object? sender, EventArgs e)
+        private void Navigation_OnDestinationReached()
         {
             if (pathState == PathState.ApproachPathStart)
             {
@@ -185,23 +173,23 @@ namespace Core.Goals
                 stopMoving.Stop();
 
                 input.ClearTarget();
-                wait.Update(1);
+                wait.Update();
 
                 npcNameTargeting.ChangeNpcType(NpcNames.Friendly | NpcNames.Neutral);
-                npcNameTargeting.WaitForNUpdate(1);
+                npcNameTargeting.WaitForUpdate();
                 bool foundVendor = npcNameTargeting.FindBy(CursorType.Vendor, CursorType.Repair, CursorType.Innkeeper);
                 if (!foundVendor)
                 {
                     LogWarn($"No target found by cursor({nameof(CursorType.Vendor)}, {nameof(CursorType.Repair)}, {nameof(CursorType.Innkeeper)})! Attempt to use macro to aquire target");
-                    input.KeyPress(key.ConsoleKey, input.defaultKeyPress);
+                    input.Proc.KeyPress(key.ConsoleKey, input.defaultKeyPress);
                 }
 
-                (bool targetTimeout, double targetElapsedMs) = wait.Until(400, () => playerReader.HasTarget);
+                (bool targetTimeout, double targetElapsedMs) = wait.Until(400, playerReader.Bits.HasTarget);
                 if (targetTimeout)
                 {
                     LogWarn("No target found! Turn left to find NPC");
-                    using var cts = new CancellationTokenSource();
-                    input.KeyPressSleep(input.TurnLeftKey, 250, cts);
+                    using CancellationTokenSource cts = new();
+                    input.Proc.KeyPressSleep(input.Proc.TurnLeftKey, 250, cts);
                     return;
                 }
 
@@ -220,13 +208,13 @@ namespace Core.Goals
                         LogWarn("There was no grey item to sell. Stuck here!");
                     }
 
-                    input.KeyPress(ConsoleKey.Escape, input.defaultKeyPress);
+                    input.Proc.KeyPress(ConsoleKey.Escape, input.defaultKeyPress);
                     input.ClearTarget();
-                    wait.Update(1);
+                    wait.Update();
 
-                    var path = key.Path.ToList();
-                    path.Reverse();
-                    navigation.SetWayPoints(path);
+                    Vector3[] reversePath = key.Path.ToArray();
+                    Array.Reverse(reversePath);
+                    navigation.SetWayPoints(reversePath);
 
                     pathState++;
 
@@ -239,7 +227,7 @@ namespace Core.Goals
                     while (navigation.HasWaypoint())
                     {
                         navigation.Update();
-                        wait.Update(1);
+                        wait.Update();
                     }
 
                     pathState = PathState.Finished;
@@ -264,14 +252,14 @@ namespace Core.Goals
 
         private bool OpenMerchantWindow()
         {
-            (bool timeout, double elapsedMs) = wait.Until(GossipTimeout, () => gossipReader.GossipStart || gossipReader.MerchantWindowOpened);
-            if (gossipReader.MerchantWindowOpened)
+            (bool timeout, double elapsedMs) = wait.Until(GossipTimeout, gossipReader.GossipStartOrMerchantWindowOpened);
+            if (gossipReader.MerchantWindowOpened())
             {
                 LogWarn($"Gossip no options! {elapsedMs}ms");
             }
             else
             {
-                (bool gossipEndTimeout, double gossipEndElapsedMs) = wait.Until(GossipTimeout, () => gossipReader.GossipEnd);
+                (bool gossipEndTimeout, double gossipEndElapsedMs) = wait.Until(GossipTimeout, gossipReader.GossipEnd);
                 if (timeout)
                 {
                     LogWarn($"Gossip - {nameof(gossipReader.GossipEnd)} not fired after {gossipEndElapsedMs}ms");
@@ -294,12 +282,12 @@ namespace Core.Goals
 
             Log($"Merchant window opened after {elapsedMs}ms");
 
-            (bool sellStartedTimeout, double sellStartedElapsedMs) = wait.Until(GossipTimeout, () => gossipReader.MerchantWindowSelling);
+            (bool sellStartedTimeout, double sellStartedElapsedMs) = wait.Until(GossipTimeout, gossipReader.MerchantWindowSelling);
             if (!sellStartedTimeout)
             {
                 Log($"Merchant sell grey items started after {sellStartedElapsedMs}ms");
 
-                (bool sellFinishedTimeout, double sellFinishedElapsedMs) = wait.Until(GossipTimeout, () => gossipReader.MerchantWindowSellingFinished);
+                (bool sellFinishedTimeout, double sellFinishedElapsedMs) = wait.Until(GossipTimeout, gossipReader.MerchantWindowSellingFinished);
                 if (!sellFinishedTimeout)
                 {
                     Log($"Merchant sell grey items finished, took {sellFinishedElapsedMs}ms");
@@ -326,7 +314,7 @@ namespace Core.Goals
 
         private void LogDebug(string text)
         {
-            if(debug)
+            if (debug)
                 logger.LogDebug($"[{nameof(AdhocNPCGoal)}]: {text}");
         }
 

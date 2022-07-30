@@ -1,4 +1,5 @@
 ﻿using Core.Database;
+using SharedLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,11 +11,10 @@ namespace Core
         private readonly int cBagMeta;
         private readonly int cItemNumCount;
         private readonly int cItemId;
-        private readonly int cItemBits;
 
-        private readonly ISquareReader reader;
-        private readonly ItemDB itemDb;
         private readonly EquipmentReader equipmentReader;
+
+        public ItemDB ItemDB { get; private set; }
 
         private DateTime lastEvent;
 
@@ -22,14 +22,15 @@ namespace Core
 
         public Bag[] Bags { get; } = new Bag[5];
 
-        public event EventHandler? DataChanged;
+        public event Action? DataChanged;
+
+        public int Hash { private set; get; }
 
         private bool changedFromEvent;
 
-        public BagReader(ISquareReader reader, ItemDB itemDb, EquipmentReader equipmentReader, int cbagMeta, int citemNumCount, int cItemId, int cItemBits)
+        public BagReader(ItemDB itemDb, EquipmentReader equipmentReader, int cbagMeta, int citemNumCount, int cItemId)
         {
-            this.reader = reader;
-            this.itemDb = itemDb;
+            this.ItemDB = itemDb;
             this.equipmentReader = equipmentReader;
 
             this.equipmentReader.OnEquipmentChanged -= OnEquipmentChanged;
@@ -38,7 +39,6 @@ namespace Core
             this.cBagMeta = cbagMeta;
             this.cItemNumCount = citemNumCount;
             this.cItemId = cItemId;
-            this.cItemBits = cItemBits;
 
             for (int i = 0; i < Bags.Length; i++)
             {
@@ -55,26 +55,31 @@ namespace Core
             this.equipmentReader.OnEquipmentChanged -= OnEquipmentChanged;
         }
 
-        public void Read()
+        public void Read(AddonDataProvider reader)
         {
-            ReadBagMeta(out bool metaChanged);
+            ReadBagMeta(reader, out bool metaChanged);
 
-            ReadInventory(out bool inventoryChanged);
+            ReadInventory(reader, out bool inventoryChanged);
 
             if (changedFromEvent || metaChanged || inventoryChanged || (DateTime.UtcNow - this.lastEvent).TotalSeconds > 11)
             {
                 changedFromEvent = false;
-                DataChanged?.Invoke(this, EventArgs.Empty);
+                DataChanged?.Invoke();
                 lastEvent = DateTime.UtcNow;
+
+                if (metaChanged || inventoryChanged)
+                {
+                    Hash++;
+                }
             }
         }
 
-        private void ReadBagMeta(out bool changed)
+        private void ReadBagMeta(AddonDataProvider reader, out bool changed)
         {
             changed = false;
 
             //bagType * 1000000 + bagNum * 100000 + freeSlots * 1000 + self:bagSlots(bagNum)
-            int data = reader.GetIntAtCell(cBagMeta);
+            int data = reader.GetInt(cBagMeta);
             if (data == 0) return;
 
             int bagType = (int)(data / 1000000f);
@@ -109,12 +114,12 @@ namespace Core
             }
         }
 
-        private void ReadInventory(out bool hasChanged)
+        private void ReadInventory(AddonDataProvider reader, out bool hasChanged)
         {
             hasChanged = false;
 
-            // 20 -- 0-4 bagNum + 1-21 itenNum + 1-1000 quantity
-            int itemCount = reader.GetIntAtCell(cItemNumCount);
+            // 21 -- 0-4 bagNum + 1-21 itenNum + 1-1000 quantity
+            int itemCount = reader.GetInt(cItemNumCount);
             if (itemCount == 0) return;
 
             int bag = (int)(itemCount / 1000000f);
@@ -123,13 +128,8 @@ namespace Core
             int slot = (int)(itemCount / 10000f);
             itemCount -= 10000 * slot;
 
-            // 21 -- 1-999999 itemId
-            int itemId = reader.GetIntAtCell(cItemId);
-
-            // 22 -- 0-24 item bits
-            int itemBits = reader.GetIntAtCell(cItemBits);
-
-            bool isSoulbound = itemBits == 1;
+            // 22 -- 1-999999 itemId
+            int itemId = reader.GetInt(cItemId);
 
             var existingItem = BagItems.Where(b => b.BagIndex == slot).Where(b => b.Bag == bag).FirstOrDefault();
 
@@ -158,9 +158,14 @@ namespace Core
 
                 if (addItem)
                 {
-                    if (itemDb.Items.TryGetValue(itemId, out var item))
+                    if (ItemDB.Items.TryGetValue(itemId, out var item))
                     {
-                        BagItems.Add(new BagItem(bag, slot, itemId, itemCount, item, isSoulbound));
+                        BagItems.Add(new BagItem(bag, slot, itemId, itemCount, item));
+                        hasChanged = true;
+                    }
+                    else
+                    {
+                        BagItems.Add(new BagItem(bag, slot, itemId, itemCount, new Item() { Entry = itemId, Name = "Unknown" }));
                         hasChanged = true;
                     }
                 }
@@ -196,16 +201,16 @@ namespace Core
 
         public bool HasItem(int itemId) => ItemCount(itemId) != 0;
 
-        public int HighestQuantityOfWaterId()
+        public int HighestQuantityOfDrinkId()
         {
-            return itemDb.WaterIds.
+            return ItemDB.DrinkIds.
                 OrderByDescending(c => ItemCount(c)).
                 FirstOrDefault();
         }
 
         public int HighestQuantityOfFoodId()
         {
-            return itemDb.FoodIds.
+            return ItemDB.FoodIds.
                 OrderByDescending(c => ItemCount(c)).
                 FirstOrDefault();
         }
@@ -225,7 +230,7 @@ namespace Core
 
         private void UpdateBagName(int index)
         {
-            if (itemDb.Items.TryGetValue(Bags[index].ItemId, out var item))
+            if (ItemDB.Items.TryGetValue(Bags[index].ItemId, out var item))
             {
                 Bags[index].Name = item.Name;
             }

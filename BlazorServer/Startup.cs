@@ -1,34 +1,38 @@
+using BlazorTable;
 using Core;
 using Core.Addon;
+using Core.Database;
+using Core.Environment;
+using Core.Session;
+using Game;
+using MatBlazor;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PathingAPI;
+using PPather;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
+using System;
+using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
-using BlazorTable;
-using Core.Session;
-using MatBlazor;
-using SharedLib;
-using Game;
-using Core.Database;
+using WinAPI;
 
 namespace BlazorServer
 {
     public class Startup
     {
+        private static StartupConfigPid StartupConfigPid = new();
+
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
 
             var logfile = "out.log";
             var config = new LoggerConfiguration()
-                //.Enrich.FromLogContext()
                 .MinimumLevel.Debug()
                 .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
                 .WriteTo.LoggerSink()
@@ -37,13 +41,18 @@ namespace BlazorServer
                 .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss:fff} {Level:u3}] {Message:lj}{NewLine}{Exception}");
 
             Log.Logger = config.CreateLogger();
-            Log.Logger.Debug("Startup()");
+            Log.Logger.Information("Startup()");
 
-            while (WowProcess.Get() == null)
+            Configuration.GetSection(StartupConfigPid.Position).Bind(StartupConfigPid);
+
+            while (WowProcess.Get(StartupConfigPid.Id) == null)
             {
-                Log.Information("Unable to find the Wow process is it running ?");
+                Log.Information("Unable to find any Wow process, is it running ?");
                 Thread.Sleep(1000);
             }
+
+            if (StartupConfigPid.Id > -1)
+                Log.Logger.Information($"Startup() Attached pid={StartupConfigPid.Id}");
         }
 
         public IConfiguration Configuration { get; }
@@ -55,40 +64,65 @@ namespace BlazorServer
             var logger = new SerilogLoggerProvider(Log.Logger).CreateLogger(nameof(Program));
             services.AddSingleton(logger);
 
-            var wowProcess = new WowProcess();
-            var wowScreen = new WowScreen(logger, wowProcess);
-            wowScreen.GetRectangle(out var rect);
-            wowScreen.Dispose();
+            WowProcess wowProcess = new(StartupConfigPid.Id);
+            NativeMethods.GetWindowRect(wowProcess.Process.MainWindowHandle, out Rectangle rect);
 
-            var addonConfig = AddonConfig.Load();
-            var addonConfigurator = new AddonConfigurator(logger, addonConfig);
+            AddonConfigurator addonConfigurator = new(logger, wowProcess);
+            Version? installVersion = addonConfigurator.GetInstallVersion();
 
-            if (!addonConfig.IsDefault() && !addonConfigurator.Installed())
+            if (addonConfigurator.IsDefault() || installVersion == null)
             {
                 // At this point the webpage never loads so fallback to configuration page
-                AddonConfig.Delete();
-                DataFrameConfiguration.RemoveConfiguration();
+                addonConfigurator.Delete();
+                FrameConfig.Delete();
             }
 
-            if(DataFrameConfiguration.Exists() && 
-                !DataFrameConfiguration.IsValid(rect, addonConfigurator.GetInstalledVersion()))
+            if (FrameConfig.Exists() && !FrameConfig.IsValid(rect, installVersion!))
             {
                 // At this point the webpage never loads so fallback to configuration page
-                DataFrameConfiguration.RemoveConfiguration();
+                FrameConfig.Delete();
             }
 
-            if (AddonConfig.Exists() && DataFrameConfiguration.Exists())
+            wowProcess.Dispose();
+
+            services.AddSingleton<CancellationTokenSource>();
+
+            services.AddSingleton(DataConfig.Load());
+            services.AddSingleton<WowProcess>(x => new(StartupConfigPid.Id));
+            services.AddSingleton<WowScreen>();
+            services.AddSingleton<WowProcessInput>();
+            services.AddSingleton<ExecGameCommand>();
+            services.AddSingleton<AddonConfigurator>();
+            services.AddSingleton<FrameConfigurator>();
+
+            services.AddSingleton<IEnvironment, BlazorFrontend>();
+
+            if (AddonConfig.Exists() && FrameConfig.Exists())
             {
-                services.AddSingleton<IPPather>(x => GetPather(logger));
-                services.AddSingleton<IBotController>(x => new BotController(logger, x.GetRequiredService<IPPather>(), DataConfig.Load(), Configuration));
-                services.AddSingleton<IGrindSessionHandler>(x => x.GetRequiredService<IBotController>().GrindSessionHandler);
-                services.AddSingleton<IGrindSession>(x => x.GetRequiredService<IBotController>().GrindSession);
-                services.AddSingleton<IAddonReader>(x => x.GetRequiredService<IBotController>().AddonReader);
+                services.AddSingleton<MinimapNodeFinder>();
+
+                services.AddSingleton<IGrindSessionDAO, LocalGrindSessionDAO>();
+                services.AddSingleton<IPPather>(x => GetPather(logger, x.GetRequiredService<DataConfig>()));
+
+                services.AddSingleton<AutoResetEvent>(x => new(false));
+                services.AddSingleton<DataFrame[]>(x => FrameConfig.LoadFrames());
+                services.AddSingleton<AddonDataProvider>();
+                services.AddSingleton<Wait>();
+
+                services.AddSingleton<AreaDB>();
+                services.AddSingleton<WorldMapAreaDB>();
+                services.AddSingleton<ItemDB>();
+                services.AddSingleton<CreatureDB>();
+                services.AddSingleton<SpellDB>();
+                services.AddSingleton<TalentDB>();
+
+                services.AddSingleton<IAddonReader, AddonReader>();
+                services.AddSingleton<IBotController, BotController>();
             }
             else
             {
-                services.AddSingleton<IBotController>(x => new ConfigBotController());
-                services.AddSingleton<IAddonReader>(x => new ConfigAddonReader());
+                services.AddSingleton<IBotController, ConfigBotController>();
+                services.AddSingleton<IAddonReader, ConfigAddonReader>();
             }
 
             services.AddMatBlazor();
@@ -97,13 +131,12 @@ namespace BlazorServer
             services.AddBlazorTable();
         }
 
-        private IPPather GetPather(Microsoft.Extensions.Logging.ILogger logger)
+        private IPPather GetPather(Microsoft.Extensions.Logging.ILogger logger, DataConfig dataConfig)
         {
-            var scp = new StartupConfigPathing();
+            StartupConfigPathing scp = new();
             Configuration.GetSection(StartupConfigPathing.Position).Bind(scp);
 
             bool failed = false;
-            var dataConfig = DataConfig.Load();
 
             if (scp.Type == StartupConfigPathing.Types.RemoteV3)
             {
@@ -148,16 +181,10 @@ namespace BlazorServer
             }
             Log.Information("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-            var localApi = new LocalPathingApi(logger, new PPatherService(LogWrite, dataConfig));
-            localApi.SelfTest();
+            var localApi = new LocalPathingApi(logger, new PPatherService(logger, dataConfig), dataConfig);
             Log.Information($"Using {StartupConfigPathing.Types.Local}({localApi.GetType().Name}) pathing API.");
             Log.Information("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             return localApi;
-        }
-
-        public static void LogWrite(string message)
-        {
-            Log.Information(message);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

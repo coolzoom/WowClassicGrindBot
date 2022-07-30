@@ -10,7 +10,7 @@ namespace Core
         private DateTime levelStartTime = DateTime.UtcNow;
         private int levelStartXP;
 
-        public string TimeToLevel { get; private set; } = "∞";
+        public TimeSpan TimeToLevel { get; private set; } = TimeSpan.Zero;
         public DateTime PredictedLevelUpTime { get; private set; } = DateTime.MaxValue;
 
         public int MobsKilled { get; private set; }
@@ -30,8 +30,8 @@ namespace Core
             addonReader.PlayerDeath -= OnPlayerDeath;
             addonReader.PlayerDeath += OnPlayerDeath;
 
-            addonReader.CreatureHistory.KillCredit -= OnKillCredit;
-            addonReader.CreatureHistory.KillCredit += OnKillCredit;
+            addonReader.CombatLog.KillCredit -= OnKillCredit;
+            addonReader.CombatLog.KillCredit += OnKillCredit;
         }
 
         public void Dispose()
@@ -39,7 +39,7 @@ namespace Core
             playerReader.Level.Changed -= PlayerLevel_Changed;
             playerReader.PlayerXp.Changed -= PlayerExp_Changed;
             addonReader.PlayerDeath -= OnPlayerDeath;
-            addonReader.CreatureHistory.KillCredit -= OnKillCredit;
+            addonReader.CombatLog.KillCredit -= OnKillCredit;
         }
 
         public void Reset()
@@ -50,41 +50,34 @@ namespace Core
             UpdateExpPerHour();
         }
 
-        private void PlayerExp_Changed(object? sender, EventArgs e)
+        private void PlayerExp_Changed()
         {
             UpdateExpPerHour();
         }
 
-        private void PlayerLevel_Changed(object? sender, EventArgs e)
+        private void PlayerLevel_Changed()
         {
             levelStartTime = DateTime.UtcNow;
             levelStartXP = playerReader.PlayerXp.Value;
         }
 
-        private void OnPlayerDeath(object? sender, EventArgs e)
+        private void OnPlayerDeath()
         {
             Death++;
         }
 
-        private void OnKillCredit(object? sender, EventArgs e)
+        private void OnKillCredit()
         {
             MobsKilled++;
         }
 
         public void UpdateExpPerHour()
         {
-            var runningSeconds = (DateTime.UtcNow - levelStartTime).TotalSeconds;
-            var xpPerSecond = (playerReader.PlayerXp.Value - levelStartXP) / runningSeconds;
-            var secondsLeft = (playerReader.PlayerMaxXp - playerReader.PlayerXp.Value) / xpPerSecond;
+            double runningSeconds = (DateTime.UtcNow - levelStartTime).TotalSeconds;
+            double xpPerSecond = (playerReader.PlayerXp.Value - levelStartXP) / runningSeconds;
+            double secondsLeft = (playerReader.PlayerMaxXp - playerReader.PlayerXp.Value) / xpPerSecond;
 
-            if (xpPerSecond > 0)
-            {
-                TimeToLevel = new TimeSpan(0, 0, (int)secondsLeft).ToString();
-            }
-            else
-            {
-                TimeToLevel = "∞";
-            }
+            TimeToLevel = xpPerSecond > 0 ? new TimeSpan(0, 0, (int)secondsLeft) : TimeSpan.Zero;
 
             if (secondsLeft > 0 && secondsLeft < 60 * 60 * 10)
             {

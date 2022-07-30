@@ -1,6 +1,6 @@
 ﻿namespace Core
 {
-    public struct AuraCount
+    public readonly struct AuraCount
     {
         public int Hash { get; }
         public int PlayerDebuff { get; }
@@ -8,9 +8,9 @@
         public int TargetDebuff { get; }
         public int TargetBuff { get; }
 
-        public AuraCount(ISquareReader squareReader, int cell)
+        public AuraCount(AddonDataProvider reader, int cell)
         {
-            Hash = TargetBuff = squareReader.GetIntAtCell(cell);
+            Hash = TargetBuff = reader.GetInt(cell);
 
             // formula
             // playerDebuffCount * 1000000 + playerBuffCount * 10000 + targetDebuffCount * 100 + targetBuffCount

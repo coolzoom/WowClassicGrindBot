@@ -9,6 +9,7 @@ E.C = {} -- Constants
 E.C.Spell = {} -- Spells
 E.C.MIRRORTIMER = {} -- Mirror Timers
 E.C.ActionType = {} -- GetActionType
+E.C.Loot = {} -- Loot
 
 E.S = {} -- Storage
 E.R = {} -- Runtime
@@ -31,5 +32,5 @@ do
 	end
 
 	E:AddLib('AceAddon', AceAddon, AceAddonMinor)
-    E:AddLib('RangeCheck', 'LibRangeCheck-2.0')
+	E:AddLib('RangeCheck', 'LibRangeCheck-2.0')
 end

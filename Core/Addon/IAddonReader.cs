@@ -1,5 +1,4 @@
-﻿using Core.Database;
-using System;
+﻿using System;
 
 namespace Core
 {
@@ -13,29 +12,33 @@ namespace Core
 
         ActionBarCostReader ActionBarCostReader { get; }
 
+        ActionBarCooldownReader ActionBarCooldownReader { get; }
+
+        AuraTimeReader PlayerBuffTimeReader { get; }
+
+        AuraTimeReader TargetDebuffTimeReader { get; }
+
         SpellBookReader SpellBookReader { get; }
 
         TalentReader TalentReader { get; }
 
         LevelTracker LevelTracker { get; }
 
-        WorldMapAreaDB WorldMapAreaDb { get; }
-
         double AvgUpdateLatency { get; }
 
-        int CombatCreatureCount { get; }
+        int DamageTakenCount { get; }
 
         string TargetName { get; }
 
         RecordInt UIMapId { get; }
 
-        event EventHandler? AddonDataChanged;
-        event EventHandler? ZoneChanged;
-        event EventHandler? PlayerDeath;
+        event Action? AddonDataChanged;
+        event Action? ZoneChanged;
+        event Action? PlayerDeath;
 
-        void Refresh();
-        void Reset();
+        void FetchData();
+        void FullReset();
 
-        int GetIntAt(int index);
+        int GetInt(int index);
     }
 }

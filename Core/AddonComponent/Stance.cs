@@ -2,21 +2,18 @@
 {
     public class Stance
     {
-        private readonly ISquareReader reader;
         private readonly int cell;
 
         private int value;
 
-        public Stance(ISquareReader reader, int cell)
+        public Stance(int cell)
         {
-            this.reader = reader;
             this.cell = cell;
-            SetDirty();
         }
 
-        public void SetDirty()
+        public void Update(AddonDataProvider reader)
         {
-            value = reader.GetIntAtCell(cell);
+            value = reader.GetInt(cell);
         }
 
         public Form Get(PlayerReader playerReader, PlayerClassEnum playerClass) => value == 0 ? Form.None : playerClass switch
@@ -24,20 +21,18 @@
             PlayerClassEnum.Warrior => Form.Warrior_BattleStance + value - 1,
             PlayerClassEnum.Rogue => Form.Rogue_Stealth + value - 1,
             PlayerClassEnum.Priest => Form.Priest_Shadowform + value - 1,
-            PlayerClassEnum.Druid => playerReader.Buffs.Prowl ? Form.Druid_Cat_Prowl : Form.Druid_Bear + value - 1,
+            PlayerClassEnum.Druid => playerReader.Buffs.Prowl() ? Form.Druid_Cat_Prowl : Form.Druid_Bear + value - 1,
             PlayerClassEnum.Paladin => Form.Paladin_Devotion_Aura + value - 1,
             PlayerClassEnum.Shaman => Form.Shaman_GhostWolf + value - 1,
+            PlayerClassEnum.DeathKnight => Form.DeathKnight_Blood_Presence + value - 1,
             _ => Form.None
         };
 
-        public static int RuntimeSlotToActionBar(KeyAction item, PlayerReader playerReader, int slot)
+        public static int ToSlot(KeyAction item, PlayerReader playerReader)
         {
-            if (slot <= 12)
-            {
-                return (int)FormToActionBar(playerReader.Class, item.HasFormRequirement() ? item.FormEnum : playerReader.Form);
-            }
-
-            return 0;
+            return item.Slot <= ActionBar.MAIN_ACTIONBAR_SLOT
+                ? item.Slot + (int)FormToActionBar(playerReader.Class, item.HasFormRequirement ? item.FormEnum : playerReader.Form)
+                : item.Slot;
         }
 
         private static StanceActionBar FormToActionBar(PlayerClassEnum playerClass, Form form)

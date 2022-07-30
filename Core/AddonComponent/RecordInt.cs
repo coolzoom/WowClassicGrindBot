@@ -5,27 +5,28 @@ namespace Core
     public class RecordInt
     {
         private readonly int cell;
-        private int temp;
 
         public int Value { private set; get; }
+
         public DateTime LastChanged { private set; get; }
 
-        public int ElapsedMs => (int)(DateTime.UtcNow - LastChanged).TotalMilliseconds;
+        public int ElapsedMs() => (int)(DateTime.UtcNow - LastChanged).TotalMilliseconds;
 
-        public event EventHandler? Changed;
+        public event Action? Changed;
 
         public RecordInt(int cell)
         {
             this.cell = cell;
         }
 
-        public bool Updated(ISquareReader reader)
+        public bool Updated(AddonDataProvider reader)
         {
-            temp = reader.GetIntAtCell(cell);
+            int temp = Value;
+            Value = reader.GetInt(cell);
+
             if (temp != Value)
             {
-                Value = temp;
-                Changed?.Invoke(this, EventArgs.Empty);
+                Changed?.Invoke();
                 LastChanged = DateTime.UtcNow;
                 return true;
             }
@@ -33,21 +34,33 @@ namespace Core
             return false;
         }
 
-        public void Update(ISquareReader reader)
+        public bool UpdatedNoEvent(AddonDataProvider reader)
         {
-            temp = reader.GetIntAtCell(cell);
+            int temp = Value;
+            Value = reader.GetInt(cell);
+            return temp != Value;
+        }
+
+        public void Update(AddonDataProvider reader)
+        {
+            int temp = Value;
+            Value = reader.GetInt(cell);
+
             if (temp != Value)
             {
-                Value = temp;
-                Changed?.Invoke(this, EventArgs.Empty);
+                Changed?.Invoke();
                 LastChanged = DateTime.UtcNow;
             }
+        }
+
+        public void UpdateTime()
+        {
+            LastChanged = DateTime.UtcNow;
         }
 
         public void Reset()
         {
             Value = 0;
-            temp = 0;
             LastChanged = default;
         }
 

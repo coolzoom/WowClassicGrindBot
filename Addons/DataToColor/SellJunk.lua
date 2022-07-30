@@ -5,12 +5,25 @@ if not DataToColor.DATA_CONFIG.AUTO_SELL_GREY_ITEMS then
     return
 end
 
+local CreateFrame = CreateFrame
+local UIParent = UIParent
+local C_Timer = C_Timer
+
+local MerchantFrame = MerchantFrame
+local UseContainerItem = UseContainerItem
+
+local GetContainerItemInfo = GetContainerItemInfo
+local GetContainerNumSlots = GetContainerNumSlots
+local GetContainerItemLink = GetContainerItemLink
+local GetItemInfo = GetItemInfo
+local GetCoinTextureString = GetCoinTextureString
+
 local MERCHANT_SELLING = 9999997
 local MERCHANT_SELLING_FINISHED = 9999996
 
 local mFrame = CreateFrame("Frame", nil, UIParent)
-mFrame:RegisterEvent("MERCHANT_SHOW");
-mFrame:RegisterEvent("MERCHANT_CLOSED");
+mFrame:RegisterEvent("MERCHANT_SHOW")
+mFrame:RegisterEvent("MERCHANT_CLOSED")
 
 local mIterationCount, mIterationInterval, mTotalPrice = 500, 0.2, 0
 local mSellJunkTicker, mBagID, mBagSlot
@@ -46,7 +59,7 @@ function StopSelling()
 
     if mSelling then
         mSelling = false
-        DataToColor.stack:push(DataToColor.gossipQueue, MERCHANT_SELLING_FINISHED)
+        DataToColor.gossipQueue:push(MERCHANT_SELLING_FINISHED)
     end
 end
 
@@ -78,7 +91,7 @@ function SellJunkFunc()
                             mBagID, mBagSlot = bagID, bagSlot
                             if not mSelling then
                                 mSelling = true
-                                DataToColor.stack:push(DataToColor.gossipQueue, MERCHANT_SELLING)
+                                DataToColor.gossipQueue:push(MERCHANT_SELLING)
                             end
                         end
                     end

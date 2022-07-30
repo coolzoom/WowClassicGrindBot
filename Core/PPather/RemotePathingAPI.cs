@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
 using System;
 using System.Linq;
 using System.Collections.Generic;
@@ -6,9 +6,11 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using Core.PPather;
+using PPather.Data;
 using System.Text;
 using System.Numerics;
+using SharedLib;
+using SharedLib.Converters;
 
 namespace Core
 {
@@ -16,40 +18,46 @@ namespace Core
     {
         private readonly ILogger logger;
 
-        private string host = "localhost";
+        private readonly string host = "localhost";
 
-        private int port = 5001;
+        private readonly int port = 5001;
 
-        private string api => $"http://{host}:{port}/api/PPather/";
+        private readonly string api;
 
-        private List<LineArgs> lineArgs = new List<LineArgs>();
+        private readonly Stopwatch stopwatch;
+
+        private readonly JsonSerializerOptions options;
 
         public RemotePathingAPI(ILogger logger, string host = "", int port = 0)
         {
             this.logger = logger;
             this.host = host;
             this.port = port;
+
+            stopwatch = new();
+
+            options = new()
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            options.Converters.Add(new Vector3Converter());
+            options.Converters.Add(new Vector4Converter());
+
+            api = $"http://{host}:{port}/api/PPather/";
         }
 
         public async ValueTask DrawLines(List<LineArgs> lineArgs)
         {
-            this.lineArgs = lineArgs;
-
             using var client = new HttpClient();
-            using var content = new StringContent(JsonConvert.SerializeObject(lineArgs), Encoding.UTF8, "application/json");
+            using var content = new StringContent(JsonSerializer.Serialize(lineArgs, options), Encoding.UTF8, "application/json");
             LogInformation($"Drawing lines '{string.Join(", ", lineArgs.Select(l => l.MapId))}'...");
             await client.PostAsync($"{api}Drawlines", content);
-        }
-
-        public async ValueTask DrawLines()
-        {
-            await DrawLines(lineArgs);
         }
 
         public async ValueTask DrawSphere(SphereArgs args)
         {
             using var client = new HttpClient();
-            using var content = new StringContent(JsonConvert.SerializeObject(args), Encoding.UTF8, "application/json");
+            using var content = new StringContent(JsonSerializer.Serialize(args, options), Encoding.UTF8, "application/json");
             await client.PostAsync($"{api}DrawSphere", content);
         }
 
@@ -58,22 +66,19 @@ namespace Core
             try
             {
                 LogInformation($"Finding route from {fromPoint} map {map} to {toPoint} map {map}...");
-                var url = $"{api}MapRoute?map1={map}&x1={fromPoint.X}&y1={fromPoint.Y}&map2={map}&x2={toPoint.X}&y2={toPoint.Y}";
-                var sw = new Stopwatch();
-                sw.Start();
+                var url = $"{api}MapRoute?uimap1={map}&x1={fromPoint.X}&y1={fromPoint.Y}&uimap2={map}&x2={toPoint.X}&y2={toPoint.Y}";
 
+                stopwatch.Restart();
                 using var client = new HttpClient();
-                var responseString = await client.GetStringAsync(url);
-                LogInformation($"Finding route from {fromPoint} map {map} to {toPoint} took {sw.ElapsedMilliseconds} ms.");
-                var path = JsonConvert.DeserializeObject<IEnumerable<WorldMapAreaSpot>>(responseString);
-                var result = path.Select(l => new Vector3(l.X, l.Y, l.Z)).ToList();
-                return result;
+                string responseString = await client.GetStringAsync(url);
+                LogInformation($"Finding route from {fromPoint} map {map} to {toPoint} took {stopwatch.ElapsedMilliseconds} ms.");
+                return JsonSerializer.Deserialize<List<Vector3>>(responseString, options) ?? new();
             }
             catch (Exception ex)
             {
                 LogError($"Finding route from {fromPoint} to {toPoint}", ex);
                 Console.WriteLine(ex);
-                return new List<Vector3>();
+                return new();
             }
         }
 
@@ -85,7 +90,7 @@ namespace Core
 
                 using var client = new HttpClient();
                 var responseString = await client.GetStringAsync(url);
-                var result = JsonConvert.DeserializeObject<bool>(responseString);
+                var result = JsonSerializer.Deserialize<bool>(responseString);
                 return result;
             }
             catch (Exception ex)
@@ -105,16 +110,6 @@ namespace Core
         private void LogInformation(string text)
         {
             logger.LogInformation($"{nameof(RemotePathingAPI)}: {text}");
-        }
-
-        private void LogDebug(string text)
-        {
-            logger.LogDebug($"{nameof(RemotePathingAPI)}: {text}");
-        }
-
-        private void LogWarning(string text)
-        {
-            logger.LogWarning($"{nameof(RemotePathingAPI)}: {text}");
         }
 
         #endregion

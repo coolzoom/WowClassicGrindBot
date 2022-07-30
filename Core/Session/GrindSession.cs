@@ -1,27 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Threading;
 using Newtonsoft.Json;
 
 namespace Core.Session
 {
-    public class GrindSession : IGrindSession, IDisposable
+    public class GrindSession
     {
-        private readonly IBotController _botController;
-        private readonly IGrindSessionHandler _grindSessionHandler;
-        private readonly CancellationTokenSource cts;
-        private Thread? _autoUpdateThread;
-
-        public GrindSession(IBotController botController, IGrindSessionHandler grindSessionHandler)
-        {
-            cts = new CancellationTokenSource();
-            _botController = botController;
-            _grindSessionHandler = grindSessionHandler;
-        }
         [JsonIgnore]
-        public bool Active { get; set; }
+        public int[] ExpList { get; set; } = Array.Empty<int>();
+
         public Guid SessionId { get; set; }
-        public string PathName { get; set; } = "No path selected";
+        public string PathName { get; set; } = string.Empty;
         public PlayerClassEnum PlayerClass { get; set; }
         public DateTime SessionStart { get; set; }
         public DateTime SessionEnd { get; set; }
@@ -42,13 +30,15 @@ namespace Core.Session
         {
             get
             {
-                var expList = ExperienceProvider.GetExperienceList(); // eh should not load a file each time called this getter :(
-                var maxLevel = expList.Length + 1;
+                if (ExpList.Length == 0)
+                    return 0;
+
+                int maxLevel = ExpList.Length + 1;
                 if (LevelFrom == maxLevel)
                     return 0;
 
-                if (LevelFrom == maxLevel-1 && LevelTo == maxLevel)
-                    return expList[LevelFrom - 1] - XpFrom;
+                if (LevelFrom == maxLevel - 1 && LevelTo == maxLevel)
+                    return ExpList[LevelFrom - 1] - XpFrom;
 
                 if (LevelTo == LevelFrom)
                 {
@@ -57,11 +47,11 @@ namespace Core.Session
 
                 if (LevelTo > LevelFrom)
                 {
-                    var expSoFar = XpTo;
+                    float expSoFar = XpTo;
 
-                    for (int i = 0; i < LevelTo-LevelFrom; i++)
+                    for (int i = 0; i < LevelTo - LevelFrom; i++)
                     {
-                        expSoFar += expList[LevelFrom - 1 + i] - XpFrom;
+                        expSoFar += ExpList[LevelFrom - 1 + i] - XpFrom;
                         XpFrom = 0;
                         if (LevelTo > maxLevel)
                             break;
@@ -72,56 +62,6 @@ namespace Core.Session
 
                 return 0;
             }
-        }
-
-        public void Dispose()
-        {
-            cts?.Cancel();
-        }
-
-        public void StartBotSession()
-        {
-            Active = true;
-            SessionId = Guid.NewGuid();
-            PathName = _botController.SelectedPathFilename ?? _botController.ClassConfig?.PathFilename ?? "No Path Selected";
-            PlayerClass = _botController.AddonReader.PlayerReader.Class;
-            SessionStart = DateTime.UtcNow;
-            LevelFrom = _botController.AddonReader.PlayerReader.Level.Value;
-            XpFrom = _botController.AddonReader.PlayerReader.PlayerXp.Value;
-            MobsKilled = _botController.AddonReader.LevelTracker.MobsKilled;
-            _autoUpdateThread = new Thread(() => AutoUpdate());
-            _autoUpdateThread.Start();
-        }
-
-        private void AutoUpdate()
-        {
-            while (Active && !cts.IsCancellationRequested)
-            {
-                StopBotSession("auto save", true);
-                cts.Token.WaitHandle.WaitOne(TimeSpan.FromMinutes(1));
-            }
-        }
-
-        public void StopBotSession(string reason = "stopped by player", bool active = false)
-        {
-            Active = active;
-            SessionEnd = DateTime.UtcNow;
-            LevelTo = _botController.AddonReader.PlayerReader.Level.Value;
-            XpTo = _botController.AddonReader.PlayerReader.PlayerXp.Value;
-            Reason = reason;
-            Death = _botController.AddonReader.LevelTracker.Death;
-            MobsKilled = _botController.AddonReader.LevelTracker.MobsKilled;
-            Save();
-        }
-        
-        public void Save()
-        {
-            _grindSessionHandler.Save(this);
-        }
-
-        public List<GrindSession> Load()
-        {
-            return _grindSessionHandler.Load();
         }
     }
 }

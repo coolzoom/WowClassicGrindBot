@@ -1,25 +1,29 @@
-﻿using Core.GOAP;
-using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Core.Goals
 {
     public class WaitGoal : GoapGoal
     {
+        public override float Cost => 21;
+
         private readonly ILogger logger;
+        private readonly Wait wait;
 
-        public override float CostOfPerformingAction => 21;
-
-        public WaitGoal(ILogger logger)
+        public WaitGoal(ILogger logger, Wait wait)
+            : base(nameof(WaitGoal))
         {
             this.logger = logger;
+            this.wait = wait;
         }
 
-        public override async ValueTask PerformAction()
+        public override void OnEnter()
         {
-            SendActionEvent(new ActionEventArgs(GoapKey.isalive, true));
             logger.LogInformation("Waiting");
-            await Task.Delay(1000);
+        }
+
+        public override void Update()
+        {
+            wait.Update();
         }
     }
 }

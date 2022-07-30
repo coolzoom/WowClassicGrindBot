@@ -7,25 +7,22 @@ namespace Core.Database
 {
     public class ItemDB
     {
-        public Dictionary<int, Item> Items { get; } = new();
-        public HashSet<int> FoodIds { get; } = new();
-        public HashSet<int> WaterIds { get; } = new();
+        public static readonly Item EmptyItem = new() { Entry = 0, Name = string.Empty, Quality = 0, SellPrice = 0 };
 
-        public HashSet<int> ContainerIds { get; } = new();
+        public Dictionary<int, Item> Items { get; } = new();
+        public int[] FoodIds { get; }
+        public int[] DrinkIds { get; }
 
         public ItemDB(DataConfig dataConfig)
         {
-            var items = JsonConvert.DeserializeObject<List<Item>>(File.ReadAllText(Path.Join(dataConfig.Dbc, "items.json")));
-            items.ForEach(i =>
+            Item[] items = JsonConvert.DeserializeObject<Item[]>(File.ReadAllText(Path.Join(dataConfig.Dbc, "items.json")));
+            for (int i = 0; i < items.Length; i++)
             {
-                Items.Add(i.Entry, i);
-            });
+                Items.Add(items[i].Entry, items[i]);
+            }
 
-            var foods = JsonConvert.DeserializeObject<List<EntityId>>(File.ReadAllText(Path.Join(dataConfig.Dbc, "foods.json")));
-            foods.ForEach(x => FoodIds.Add(x.Id));
-
-            var waters = JsonConvert.DeserializeObject<List<EntityId>>(File.ReadAllText(Path.Join(dataConfig.Dbc, "waters.json")));
-            waters.ForEach(x => WaterIds.Add(x.Id));
+            FoodIds = JsonConvert.DeserializeObject<int[]>(File.ReadAllText(Path.Join(dataConfig.Dbc, "foods.json")));
+            DrinkIds = JsonConvert.DeserializeObject<int[]>(File.ReadAllText(Path.Join(dataConfig.Dbc, "waters.json")));
         }
     }
 }

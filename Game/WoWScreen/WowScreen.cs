@@ -15,17 +15,14 @@ namespace Game
         private readonly ILogger logger;
         private readonly WowProcess wowProcess;
 
-        public delegate void ScreenChangeEventHandler(object sender, ScreenChangeEventArgs args);
-        public event ScreenChangeEventHandler OnScreenChanged;
+        public event Action OnScreenChanged;
 
-        private readonly List<Action<Graphics>> drawActions = new List<Action<Graphics>>();
-
-        public int Size { get; set; } = 1024;
+        private readonly List<Action<Graphics>> drawActions = new();
 
         // TODO: make it work for higher resolution ex. 4k
         public const int MinimapSize = 200;
 
-        public bool Enabled { get; set; } = false;
+        public bool Enabled { get; set; }
 
         public bool EnablePostProcess { get; set; }
         public Bitmap Bitmap { get; private set; }
@@ -35,6 +32,9 @@ namespace Game
         private Rectangle rect;
         public Rectangle Rect => rect;
 
+        private readonly Graphics graphics;
+        private readonly Graphics graphicsMinimap;
+
         public WowScreen(ILogger logger, WowProcess wowProcess)
         {
             this.logger = logger;
@@ -43,23 +43,22 @@ namespace Game
             Point p = new();
             GetPosition(ref p);
             GetRectangle(out rect);
-            rect.X = p.X;
-            rect.Y = p.Y;
+            rect.Location = p;
 
             Bitmap = new Bitmap(rect.Width, rect.Height, PixelFormat.Format32bppPArgb);
+            graphics = Graphics.FromImage(Bitmap);
+
             MiniMapBitmap = new Bitmap(MinimapSize, MinimapSize, PixelFormat.Format32bppPArgb);
+            graphicsMinimap = Graphics.FromImage(MiniMapBitmap);
         }
 
         public void Update()
         {
             Point p = new();
             GetPosition(ref p);
-            rect.X = p.X;
-            rect.Y = p.Y;
+            rect.Location = p;
 
-            var graphics = Graphics.FromImage(Bitmap);
-            graphics.CopyFromScreen(rect.Left, rect.Top, 0, 0, Bitmap.Size);
-            graphics.Dispose();
+            graphics.CopyFromScreen(rect.Location, Point.Empty, Bitmap.Size);
         }
 
         public void AddDrawAction(Action<Graphics> a)
@@ -69,9 +68,6 @@ namespace Game
 
         public void PostProcess()
         {
-            if (!EnablePostProcess)
-                return;
-
             using (var gr = Graphics.FromImage(Bitmap))
             {
                 using (var blackPen = new SolidBrush(Color.Black))
@@ -82,17 +78,17 @@ namespace Game
                 drawActions.ForEach(x => x(gr));
             }
 
-            this.OnScreenChanged?.Invoke(this, new ScreenChangeEventArgs(ToBase64(Bitmap, Size)));
+            OnScreenChanged?.Invoke();
         }
 
         public void GetPosition(ref Point point)
         {
-            NativeMethods.GetPosition(wowProcess.WarcraftProcess.MainWindowHandle, ref point);
+            NativeMethods.GetPosition(wowProcess.Process.MainWindowHandle, ref point);
         }
 
         public void GetRectangle(out Rectangle rect)
         {
-            NativeMethods.GetWindowRect(wowProcess.WarcraftProcess.MainWindowHandle, out rect);
+            NativeMethods.GetWindowRect(wowProcess.Process.MainWindowHandle, out rect);
         }
 
 
@@ -100,8 +96,8 @@ namespace Game
         {
             Update();
 
-            Bitmap bitmap = new Bitmap(width, height);
-            Rectangle sourceRect = new Rectangle(0, 0, width, height);
+            Bitmap bitmap = new(width, height);
+            Rectangle sourceRect = new(0, 0, width, height);
             using (var graphics = Graphics.FromImage(bitmap))
             {
                 graphics.DrawImage(Bitmap, 0, 0, sourceRect, GraphicsUnit.Pixel);
@@ -117,15 +113,14 @@ namespace Game
         public void UpdateMinimapBitmap()
         {
             GetRectangle(out var rect);
-
-            var graphics = Graphics.FromImage(MiniMapBitmap);
-            graphics.CopyFromScreen(rect.Right - MinimapSize, rect.Top, 0, 0, MiniMapBitmap.Size);
-            graphics.Dispose();
+            graphicsMinimap.CopyFromScreen(rect.Right - MinimapSize, rect.Top, 0, 0, MiniMapBitmap.Size);
         }
 
         public void Dispose()
         {
             Bitmap.Dispose();
+            graphics.Dispose();
+            graphicsMinimap.Dispose();
         }
 
         private static Bitmap CropImage(Bitmap img, bool highlight)

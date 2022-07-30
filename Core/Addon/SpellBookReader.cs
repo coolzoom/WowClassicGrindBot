@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System;
 using Core.Database;
 using SharedLib;
 
@@ -8,41 +9,49 @@ namespace Core
     {
         private readonly int cSpellId;
 
-        private readonly ISquareReader reader;
+        private readonly HashSet<int> spells = new();
+
         public SpellDB SpellDB { get; }
+        public int Count => spells.Count;
 
-        public int Count => Spells.Count;
-
-        public Dictionary<int, Spell> Spells { get; } = new();
-
-        public SpellBookReader(ISquareReader reader, int cSpellId, SpellDB spellDB)
+        public SpellBookReader(int cSpellId, SpellDB spellDB)
         {
-            this.reader = reader;
             this.cSpellId = cSpellId;
             this.SpellDB = spellDB;
         }
 
-        public void Read()
+        public void Read(AddonDataProvider reader)
         {
-            int spellId = reader.GetIntAtCell(cSpellId);
+            int spellId = reader.GetInt(cSpellId);
             if (spellId == 0) return;
-            if (!Spells.ContainsKey(spellId) && SpellDB.Spells.TryGetValue(spellId, out Spell spell))
-            {
-                Spells.Add(spellId, spell);
-            }
+
+            spells.Add(spellId);
         }
 
         public void Reset()
         {
-            Spells.Clear();
+            spells.Clear();
         }
 
-        public int GetSpellIdByName(string name)
+        public bool Has(int id)
         {
-            foreach (var kvp in Spells)
+            return spells.Contains(id);
+        }
+
+        public bool TryGetValue(int id, out Spell spell)
+        {
+            return SpellDB.Spells.TryGetValue(id, out spell);
+        }
+
+        public int GetId(string name)
+        {
+            foreach (int id in spells)
             {
-                if (kvp.Value.Name.ToLower() == name.ToLower())
-                    return kvp.Key;
+                if (TryGetValue(id, out Spell spell) &&
+                    name.Equals(spell.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    return spell.Id;
+                }
             }
 
             return 0;
