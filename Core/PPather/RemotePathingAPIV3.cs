@@ -86,8 +86,9 @@ namespace Core
 
                 List<Vector3> result = new();
 
-                Vector3 start = worldMapAreaDB.ToWorld(uiMapId, fromPoint, true);
-                Vector3 end = worldMapAreaDB.ToWorld(uiMapId, toPoint, true);
+                //incoming data was ui xy, need to convert to world xyz
+                Vector3 start = new Vector3((0 - fromPoint.Y) * 200, (0 - fromPoint.X) * 200, fromPoint.Z);// worldMapAreaDB.ToWorld(uiMapId, fromPoint, true);
+                Vector3 end = new Vector3((0 - toPoint.Y) * 200, (0 - toPoint.X) * 200, toPoint.Z);// worldMapAreaDB.ToWorld(uiMapId, toPoint, true);
 
                 // incase haven't asked a pathfinder for a route this value will be 0
                 // that case use the highest location
@@ -109,7 +110,15 @@ namespace Core
                     if (debug)
                         LogInformation($"new float[] {{ {path[i].X}f, {path[i].Y}f, {path[i].Z}f }},");
 
-                    result.Add(worldMapAreaDB.ToLocal(path[i], area.MapID, uiMapId));
+                    //convert to UI xyz
+                    Vector3 pt = new Vector3(0 - path[i].Y / 200, 0 - path[i].X / 200, path[i].Z);
+                    result.Add(pt);
+                }
+
+                //fix, the returning path did not include the final destination, we should add here
+                if (result.Count > 0)
+                {
+                    result.Add(toPoint);
                 }
 
                 return new ValueTask<List<Vector3>>(result);

@@ -13,7 +13,7 @@ namespace Game
     public sealed class WowScreen : IWowScreen, IBitmapProvider, IDisposable
     {
         private readonly ILogger logger;
-        private readonly WowProcess wowProcess;
+        public readonly WowProcess wowProcess;
 
         public event Action OnScreenChanged;
 

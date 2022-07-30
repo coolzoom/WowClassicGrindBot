@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using WinAPI;
 
 #nullable enable
 
@@ -20,6 +21,8 @@ namespace Game
         private readonly CancellationTokenSource cts;
 
         public Process Process { get; private set; }
+
+        public string FileVersion;
 
         private int processId = -1;
         public int ProcessId
@@ -41,6 +44,7 @@ namespace Game
                 throw new NullReferenceException("Unable to find running World of Warcraft process!");
 
             Process = p;
+            FileVersion = p.MainModule.FileVersionInfo.FileVersion;
             processId = Process.Id;
             IsRunning = true;
 
@@ -67,6 +71,7 @@ namespace Game
                     if (p != null)
                     {
                         Process = p;
+                        FileVersion = p.MainModule.FileVersionInfo.FileVersion;
                         processId = Process.Id;
                         IsRunning = true;
                     }

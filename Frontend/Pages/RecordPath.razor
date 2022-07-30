@@ -43,6 +43,7 @@
         <h3><span style="color:orange">&#9650;</span> Player</h3>
         <input type="text" class="col-sm-2 form-control" disabled="disabled" value="@addonReader.PlayerReader.XCoord" />
         <input type="text" class="col-sm-2 form-control" disabled="disabled" value="@addonReader.PlayerReader.YCoord" />
+        <input type="text" class="col-sm-2 form-control" disabled="disabled" value="@addonReader.PlayerReader.ZCoord" />
         <hr>
     </div>
 </div>
@@ -108,12 +109,14 @@
                         <td>
                             <input type="text" id="posx" class="col-sm-6 form-control" @bind="X" />
                             <input type="text" id="posy" class="col-sm-6 form-control" @bind="Y" />
+                            <input type="text" id="posz" class="col-sm-6 form-control" @bind="Z" />
                         </td>
                         <td>
                             @if (selectedPoint != previewPoint)
                             {
                                 <input type="text" class="col-sm-6 form-control" disabled="disabled" @bind="selectedPoint.X" />
                                 <input type="text" class="col-sm-6 form-control" disabled="disabled" @bind="selectedPoint.Y" />
+                                <input type="text" class="col-sm-6 form-control" disabled="disabled" @bind="selectedPoint.Z" />
                             }
                         </td>
                     </tr>
@@ -170,7 +173,7 @@
                 var point = editPath[i];
                 int index = i;
                 <span class="badge @DisplayBadge(point)" @onclick="() => UpdateSelectedPoint(point, index)">
-                    @point.X.ToString("0.00"),@point.Y.ToString("0.00")&nbsp;
+                    @point.X.ToString("0.00"),@point.Y.ToString("0.00"),@point.Z.ToString("0.00")&nbsp;
                 </span>
             }
         }
@@ -210,10 +213,12 @@
 
     protected string x = "0";
     protected string y = "0";
+    protected string z = "0";
     private int cachedIndex = 0;
 
     protected string X { get => x; set { x = value; UpdatePreviewPoint(); } }
     protected string Y { get => y; set { y = value; UpdatePreviewPoint(); } }
+    protected string Z { get => z; set { z = value; UpdatePreviewPoint(); } }
 
     protected string error = string.Empty;
     protected string message = string.Empty;
@@ -266,16 +271,14 @@
                 StateHasChanged();
             }
 
-        /*
-        // requires async
-        var p = addonReader.PlayerReader.PlayerLocation;
-            var pp = new Vector3(
-            route.ToCanvasPointX(p.X),
-            route.ToCanvasPointY(p.Y),
-        0);
+            /*
+            // requires async
+            var p = addonReader.PlayerReader.PlayerLocation;
+                var pp = new Vector3(
+                route.ToCanvasPointX(p.X),
 
-        await JSRuntime.InvokeVoidAsync("focusAt", JsonConvert.SerializeObject(pp));
-        */
+                await JSRuntime.InvokeVoidAsync("focusAt", JsonConvert.SerializeObject(pp));
+            */
         });
     }
 
@@ -338,7 +341,7 @@
         previewPoint = default;
         X = "0";
         Y = "0";
-
+        Z = "0";
         ClearMarkup();
 
         message = "Cleared...";
@@ -456,6 +459,7 @@
         this.selectedPoint = point;
         this.X = point.X.ToString();
         this.Y = point.Y.ToString();
+        this.Z = point.Z.ToString();
 
         cachedIndex = index;
 
@@ -553,7 +557,18 @@
     [JSInvokable("PointClick")]
     public void PointClick(float x, float y, int i)
     {
-        UpdateSelectedPoint(new Vector3(x, y, 0), i);
+        Vector3 vTemp = new Vector3(x,y,0);
+
+        for (int a = 0; a < editPath.Count; a++)
+        {
+            if (editPath[a].X == x && editPath[a].Y == y)
+            {
+                vTemp = editPath[i];
+            }
+        }
+
+        
+        UpdateSelectedPoint(vTemp, i);
         StateHasChanged();
     }
 }

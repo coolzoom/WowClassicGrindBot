@@ -69,8 +69,8 @@ namespace Core.Goals
 
         private readonly string patherName;
 
-        private const int MinDistance = 10;
-        private const int MinDistanceMount = 15;
+        private const int MinDistance = 2;//final destination alwasy far from target location, change this to smaller, originally 10
+        private const int MinDistanceMount = 3;
         private readonly int MaxDistance = 200;
 
         private float AvgDistance;
@@ -186,7 +186,7 @@ namespace Core.Goals
                 {
                     if (routeToNextWaypoint.Peek().Z != 0 && routeToNextWaypoint.Peek().Z != location.Z)
                     {
-                        playerReader.ZCoord = routeToNextWaypoint.Peek().Z;
+                        //playerReader.ZCoord = routeToNextWaypoint.Peek().Z;
                         if (debug)
                             LogDebug($"Update PlayerLocation.Z = {playerReader.ZCoord}");
                     }
@@ -231,6 +231,7 @@ namespace Core.Goals
 
             if (routeToNextWaypoint.Count > 0)
             {
+                //AdjustHeading(heading, cts);
                 if (!stuckDetector.IsGettingCloser())
                 {
                     if (stuckDetector.ActionDurationMs > 10_000)
@@ -482,8 +483,9 @@ namespace Core.Goals
 
             var A = wayPoints.Pop();
             var B = wayPoints.Peek();
+            var z = A.Z > B.Z ? A.Z : B.Z;//使用稍高一点的Z做寻路点
             var result = VectorExt.GetClosestPointOnLineSegment(A.AsVector2(), B.AsVector2(), playerReader.PlayerLocation.AsVector2());
-            var newPoint = new Vector3(result.X, result.Y, 0);
+            var newPoint = new Vector3(result.X, result.Y, z);
             if (newPoint.DistanceXYTo(wayPoints.Peek()) > MinDistance)
             {
                 wayPoints.Push(newPoint);

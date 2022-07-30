@@ -1,7 +1,14 @@
 ﻿using Game;
+//using PlayerMonitor;
+using Process.NET;
+using Process.NET.Patterns;
+using SharedLib;
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Net;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace Core
 {
@@ -23,12 +30,21 @@ namespace Core
         private readonly Bitmap bitmap;
         private readonly Graphics graphics;
 
+
+        private static ProcessSharp processSharp;
+        private static PatternScanner patternScanner;
+
+        private float[] fxyz;
+        private float fOrie;
+        private int iMapID;
+
         public AddonDataProvider(WowScreen wowScreen, DataFrame[] frames)
         {
             this.wowScreen = wowScreen;
             this.frames = frames;
 
             data = new int[this.frames.Length];
+            //fxyz = new float[3];
 
             for (int i = 0; i < this.frames.Length; i++)
             {
@@ -55,6 +71,14 @@ namespace Core
 
             unsafe
             {
+                //
+                processSharp = new ProcessSharp(wowScreen.wowProcess.Process, Process.NET.Memory.MemoryType.Remote);
+                patternScanner = new PatternScanner(processSharp[processSharp.Native.MainModule.ModuleName]);
+
+                fxyz = processSharp.Memory.Read<float>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2CAD878), 3);
+                fOrie = processSharp.Memory.Read<float>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2CAC370));
+                iMapID = processSharp.Memory.Read<int>(IntPtr.Add(processSharp.Native.MainModule.BaseAddress, 0x2CB2D70));
+
                 BitmapData bd = bitmap.LockBits(rect, ImageLockMode.ReadOnly, pixelFormat);
 
                 byte* fLine = (byte*)bd.Scan0 + (frames[0].Y * bd.Stride);
@@ -80,6 +104,33 @@ namespace Core
             Exit:
                 bitmap.UnlockBits(bd);
             }
+        }
+
+        public float GetXYZ(int i)
+        {
+            return fxyz[i];
+        }
+
+        public Vector3 GetXYZ()
+        {
+            Vector3 pos = new Vector3(fxyz[0], fxyz[1], fxyz[2]);
+            return pos;
+        }
+
+        public Vector3 GetXYZUI()
+        {
+            Vector3 pos = new Vector3(0 - fxyz[1]/200, 0 - fxyz[0]/200, fxyz[2]);
+            return pos;
+        }
+
+        public float GetOrientation()
+        {
+            return fOrie;
+        }
+
+        public int GetMapID()
+        {
+            return iMapID;
         }
 
         public int GetInt(int index)

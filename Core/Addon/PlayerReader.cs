@@ -7,6 +7,7 @@ namespace Core
     public partial class PlayerReader
     {
         private readonly AddonDataProvider reader;
+
         public PlayerReader(AddonDataProvider reader)
         {
             this.reader = reader;
@@ -18,12 +19,21 @@ namespace Core
             CustomTrigger1 = new(reader.GetInt(74));
         }
 
+
+        public Vector3 PlayerLocationAddon => new(XCoordAddon, YCoordAddon, ZCoordAddon);
+
+        public float XCoordAddon => reader.GetFixed(1) * 10;
+        public float YCoordAddon => reader.GetFixed(2) * 10;
+        public float ZCoordAddon => reader.GetXYZ(2);
+        public float DirectionAddon => reader.GetFixed(3);
+
         public Vector3 PlayerLocation => new(XCoord, YCoord, ZCoord);
 
-        public float XCoord => reader.GetFixed(1) * 10;
-        public float YCoord => reader.GetFixed(2) * 10;
-        public float ZCoord { get; set; }
-        public float Direction => reader.GetFixed(3);
+        public float XCoord => reader.GetXYZUI().X;
+        public float YCoord => reader.GetXYZUI().Y;
+        public float ZCoord => reader.GetXYZ(2);
+        public float Direction => reader.GetOrientation();
+        public float MapIDMem => reader.GetMapID();
 
         public RecordInt Level { get; } = new(5);
 

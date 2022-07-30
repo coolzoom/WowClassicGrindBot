@@ -1,4 +1,4 @@
-using BlazorTable;
+﻿using BlazorTable;
 using Core;
 using Core.Addon;
 using Core.Database;
@@ -11,11 +11,13 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using PPather;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Threading;
 using System.Threading.Tasks;
@@ -66,6 +68,8 @@ namespace BlazorServer
 
             WowProcess wowProcess = new(StartupConfigPid.Id);
             NativeMethods.GetWindowRect(wowProcess.Process.MainWindowHandle, out Rectangle rect);
+
+            logger.LogInformation($"Found Client Version: {wowProcess.FileVersion}");
 
             AddonConfigurator addonConfigurator = new(logger, wowProcess);
             Version? installVersion = addonConfigurator.GetInstallVersion();

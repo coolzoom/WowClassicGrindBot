@@ -67,7 +67,7 @@ namespace Core
 
         private int TurnDuration(float desiredDirection)
         {
-            return (int)(TurnAmount(desiredDirection) * 1000 / MathF.PI);
+            return (int)(TurnAmount(desiredDirection) * 500 / MathF.PI); //we could not turn too much
         }
 
         private ConsoleKey GetDirectionKeyToPress(float desiredDirection)

@@ -1,0 +1,87 @@
+{
+  "ClassName": "Mage",
+  "Loot": true,
+  "PathFilename": "0_xyz.json",
+  "PathThereAndBack": true,
+  "PathReduceSteps": false,
+  "IntVariables": {
+    "MIN_WATER%": 20,
+    "MIN_MANA_FIREBALL%": 40
+  },
+  "Pull": {
+    "Sequence": [
+      {
+        "Name": "Fireball",
+        "Key": "2",
+        "HasCastBar": true,
+        "Requirement": "Mana% > MIN_MANA_FIREBALL%"
+      },
+      {
+        "Name": "Approach",
+        "Log": false
+      }
+    ]
+  },
+  "Combat": {
+    "Sequence": [
+      {
+        "Name": "Fireball",
+        "Key": "2",
+        "HasCastBar": true,
+        "Requirements": [
+          "TargetHealth% > 20",
+          "Mana% > MIN_MANA_FIREBALL%"
+        ]
+      },
+      {
+        "Name": "AutoAttack",
+        "Requirement": "!AutoAttacking",
+        "Log": false
+      },
+      {
+        "Name": "Approach",
+        "Log": false
+      }
+    ]
+  },
+  "Adhoc": {
+    "Sequence": [
+      {
+        "Name": "Frost Armor",
+        "Key": "3",
+        "Requirement": "!Frost Armor"
+      },
+      {
+        "Name": "Food",
+        "Key": "=",
+        "Requirement": "Health% < MIN_WATER%"
+      },
+      {
+        "Name": "Water",
+        "Key": "-",
+        "Requirement": "Mana% < MIN_WATER%"
+      }
+    ]
+  },
+  "NPC": {
+    "Sequence": [
+      {
+        "Name": "Repair",
+        "Key": "C",
+        "Requirement": "Items Broken",
+        "PathFilename": "0_xyz_repair.json",
+        "Cost": 6
+      },
+      {
+        "Name": "Sell",
+        "Key": "C",
+        "Requirements": [
+          "BagFull",
+          "BagGreyItem"
+        ],
+        "PathFilename": "0_xyz_vendor.json",
+        "Cost": 6
+      }
+    ]
+  }
+}

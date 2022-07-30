@@ -77,7 +77,7 @@ namespace Core.Goals
 
         public override void OnEnter()
         {
-            playerReader.ZCoord = 0;
+            //playerReader.ZCoord = 0;
             addonReader.PlayerDied();
 
             wait.While(AliveOrLoadingScreen);

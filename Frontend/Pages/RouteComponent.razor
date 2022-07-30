@@ -18,7 +18,13 @@
                 <td>Route @routeSymbol</td>
                 <td>
                     <div class="float-right">
-                        [@addonReader.PlayerReader.XCoord.ToString("00.0000"),@addonReader.PlayerReader.YCoord.ToString("00.0000")] @(AreaName) (@addonReader.UIMapId.Value)
+                        [X: @addonReader.PlayerReader.XCoord.ToString("00.0000"), Y: @addonReader.PlayerReader.YCoord.ToString("00.0000") Z:@addonReader.PlayerReader.ZCoord.ToString("00.0000") Direction:@addonReader.PlayerReader.Direction.ToString("00.0000")] AreaName: @(AreaName) (AreaID:@addonReader.UIMapId.Value)
+                    </div>
+                </td>
+                <td> Memory </td>
+                <td>
+                    <div class="float-right">
+                        [X: @addonReader.PlayerReader.XCoord.ToString("00.0000"), Y: @addonReader.PlayerReader.YCoord.ToString("00.0000") Z:@addonReader.PlayerReader.ZCoord.ToString("00.0000") Direction:@addonReader.PlayerReader.Direction.ToString("00.0000")] (MapID:@addonReader.PlayerReader.MapIDMem)
                     </div>
                 </td>
             </tr>

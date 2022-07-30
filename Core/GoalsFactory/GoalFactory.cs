@@ -246,7 +246,17 @@ namespace Core
             if (string.IsNullOrEmpty(keyAction.PathFilename))
                 return Array.Empty<Vector3>();
 
-            return DeserializeObject<Vector3[]>(File.ReadAllText(RelativeFilePath(dataConfig, keyAction.PathFilename)));
+            //here we are loading the actual xyz, so have to convert to ui xy
+            Vector3[] p = DeserializeObject<Vector3[]>(File.ReadAllText(RelativeFilePath(dataConfig, keyAction.PathFilename)));
+            for(int i=0; i<p.Count();i++)
+            {
+                Vector3 pt = p[i];
+                p[i].X = 0 - pt.Y / 200;
+                p[i].Y = 0 - pt.X / 200;
+
+            }
+
+            return p;
         }
     }
 }
