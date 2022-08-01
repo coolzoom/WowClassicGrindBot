@@ -146,7 +146,7 @@ namespace PathingAPI.Controllers
             if (isBusy || !initialised) { return false; }
             isBusy = true;
 
-            Vector4 location = service.ToWorld(sphere.MapId, sphere.Spot.X, sphere.Spot.Y);
+            Vector4 location = new Vector4(sphere.Spot.X, sphere.Spot.Y, 0, sphere.MapId);  //service.ToWorld(sphere.MapId, sphere.Spot.X, sphere.Spot.Y);
             service.OnSphereAdded?.Invoke(new SphereEventArgs(sphere.Name, location, sphere.Colour));
 
             isBusy = false;
