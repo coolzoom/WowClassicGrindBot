@@ -99,7 +99,14 @@ namespace PathingAPI.Controllers
             }
 
             isBusy = false;
-            return new JsonResult(path.locations);
+            if (path != null)
+            {
+                return new JsonResult(path.locations);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         /// <summary>
