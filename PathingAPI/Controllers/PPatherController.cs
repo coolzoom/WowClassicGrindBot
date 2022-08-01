@@ -153,13 +153,14 @@ namespace PathingAPI.Controllers
             return true;
         }
 
-        private List<Vector4> CreateLocations(LineArgs lines)
+        private static List<Vector4> CreateLocations(LineArgs lines)
         {
             List<Vector4> result = new();
             foreach (var s in lines.Spots)
             {
                 //result.Add(service.ToWorld(lines.MapId, s.X, s.Y, s.Z));
-                result.Add(new Vector4(s.X, s.Y, s.Z, lines.MapId));
+                Vector4 p = new Vector4(s.X, s.Y, s.Z, lines.MapId);
+                result.Add(p);
             }
             return result;
         }
