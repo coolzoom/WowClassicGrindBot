@@ -74,6 +74,9 @@ namespace PathingAPI.Controllers
         /// <summary>
         /// Allows a route to be calculated from one point to another using world coords.
         /// e.g. -896, -3770, 11, (Barrens,Rachet) to -441, -2596, 96, (Barrens,Crossroads,Barrens)
+        /// -6327.2827, 374.46094, 377.94583
+        /// -6225.24, 320.37, 383.3
+        /// http://localhost:5001/api/PPather/WorldRoute?x1=-6327.28271&y1=374.46094&z1=377.94583&x2=-6225.24&y2=320.37&z2=383.3&mapid=0
         /// </summary>
         /// <param name="x1">from X e.g. -896</param>
         /// <param name="y1">from Y e.g. -3770</param>
@@ -94,8 +97,9 @@ namespace PathingAPI.Controllers
             {
                 service.Save();
             }
+
             isBusy = false;
-            return new JsonResult(path);
+            return new JsonResult(path.locations);
         }
 
         /// <summary>
