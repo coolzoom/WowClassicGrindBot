@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 
 namespace Core.Addon
 {
@@ -25,23 +26,49 @@ namespace Core.Addon
 
         public RecordInt UIMapId => throw new NotImplementedException();
 
-#pragma warning disable CS0067 // The event is never used
         public event Action? AddonDataChanged;
+
+#pragma warning disable CS0067 // The event is never used
         public event Action? ZoneChanged;
         public event Action? PlayerDeath;
 #pragma warning restore CS0067
 
+        private readonly IAddonDataProvider reader;
+        private readonly AutoResetEvent autoResetEvent;
+
+        public ConfigAddonReader(IAddonDataProvider reader, AutoResetEvent autoResetEvent)
+        {
+            this.reader = reader;
+            this.autoResetEvent = autoResetEvent;
+        }
+
         public int GetInt(int index)
         {
-            throw new NotImplementedException();
+            return reader.GetInt(index);
         }
 
         public void FetchData()
         {
-            throw new NotImplementedException();
+            reader.Update();
         }
 
         public void FullReset()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Update()
+        {
+            FetchData();
+            autoResetEvent.Set();
+        }
+
+        public void UpdateUI()
+        {
+            AddonDataChanged?.Invoke();
+        }
+
+        public void SessionReset()
         {
             throw new NotImplementedException();
         }

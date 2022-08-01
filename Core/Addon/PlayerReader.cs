@@ -6,9 +6,9 @@ namespace Core
 {
     public partial class PlayerReader
     {
-        private readonly AddonDataProvider reader;
+        private readonly IAddonDataProvider reader;
 
-        public PlayerReader(AddonDataProvider reader)
+        public PlayerReader(IAddonDataProvider reader)
         {
             this.reader = reader;
             Bits = new(8, 9);
@@ -169,7 +169,7 @@ namespace Core
             _ => false
         };
 
-        public void Update(AddonDataProvider reader)
+        public void Update(IAddonDataProvider reader)
         {
             Bits.Update(reader);
             SpellInRange.Update(reader);
