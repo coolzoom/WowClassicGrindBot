@@ -158,7 +158,8 @@ namespace PathingAPI.Controllers
             List<Vector4> result = new();
             foreach (var s in lines.Spots)
             {
-                result.Add(service.ToWorld(lines.MapId, s.X, s.Y, s.Z));
+                //result.Add(service.ToWorld(lines.MapId, s.X, s.Y, s.Z));
+                result.Add(new Vector4(s.X, s.Y, s.Z, lines.MapId));
             }
             return result;
         }
