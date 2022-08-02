@@ -33,9 +33,10 @@ local GetSpellInfo = GetSpellInfo
 local GetActionCooldown = GetActionCooldown
 local IsUsableAction = IsUsableAction
 local GetActionTexture = GetActionTexture
-local GetTime = GetTime
 local IsCurrentAction = IsCurrentAction
 local IsAutoRepeatAction = IsAutoRepeatAction
+
+local IsUsableSpell = IsUsableSpell
 
 local GetNumSkillLines = GetNumSkillLines
 local GetSkillLineInfo = GetSkillLineInfo
@@ -61,6 +62,7 @@ local UnitOnTaxi = UnitOnTaxi
 local IsSwimming = IsSwimming
 local IsFalling = IsFalling
 local IsIndoors = IsIndoors
+local IsStealthed = IsStealthed
 local GetMirrorTimerInfo = GetMirrorTimerInfo
 local IsMounted = IsMounted
 local IsInGroup = IsInGroup
@@ -139,7 +141,8 @@ function DataToColor:Bits2()
         base2(UnitAffectingCombat(DataToColor.C.unitFocusTarget) and 1 or 0, 6) +
         base2(DataToColor:isHostile(DataToColor.C.unitFocusTarget), 7) +
         base2(UnitExists(DataToColor.C.unitFocusTarget) and CheckInteractDistance(DataToColor.C.unitFocusTarget, 2) and 1 or 0, 8) +
-        base2(UnitIsDead(DataToColor.C.unitPetTarget) and 1 or 0, 1)
+        base2(UnitIsDead(DataToColor.C.unitPetTarget) and 1 or 0, 9) +
+        base2(IsStealthed() and 1 or 0, 10)
 end
 
 function DataToColor:CustomTrigger(t)
@@ -387,8 +390,9 @@ function DataToColor:isActionUseable(min, max)
         local start, duration, enabled = GetActionCooldown(i)
         local isUsable, notEnough = IsUsableAction(i)
         local texture = GetActionTexture(i)
+        local spellName = DataToColor.S.playerSpellBook[texture]
 
-        if start == 0 and isUsable == true and notEnough == false and texture ~= 134400 then -- red question mark texture
+        if start == 0 and (isUsable == true and notEnough == false or IsUsableSpell(spellName)) and texture ~= 134400 then -- red question mark texture
             isUsableBits = isUsableBits + (2 ^ (i - min))
         end
 
