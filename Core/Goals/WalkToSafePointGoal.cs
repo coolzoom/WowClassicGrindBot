@@ -57,7 +57,7 @@ namespace Core.Goals
 
             this.navigation = navigation;
 
-            AddPrecondition(GoapKey.incombat, true);
+            AddPrecondition(GoapKey.pulled, true);
             //AddPrecondition(GoapKey.newtarget, false);
         }
 
@@ -73,7 +73,7 @@ namespace Core.Goals
                 navigation.ResetStuckParameters();
             }
         }
-
+        private Vector3 safeloc = new Vector3((float)30.1156, (float)74.1506, (float)0.0);
         public override void OnEnter()
         {
             //playerReader.ZCoord = 0;
@@ -82,18 +82,29 @@ namespace Core.Goals
             //wait.While(AliveOrLoadingScreen);
             //Log($"Player teleported to the graveyard!");
 
-            var safeloc = new Vector3((float)30.1156, (float)74.1506, (float)0.0);
-            Log($"safe is {safeloc}");
+            if (Math.Abs(addonReader.PlayerReader.PlayerLocation.X - safeloc.X) < 0.1 && Math.Abs(addonReader.PlayerReader.PlayerLocation.Y - safeloc.Y) < 0.1)
+            {
+                //we should set the pulled to false, because we alreay in position and should start combat
+                PulledState = false; 
+                //AddEffect(GoapKey.pulled,false);
+                //SendGoapEvent(new GoapStateEvent(GoapKey.pulled, false));
+            }
+            else
+            {
+                Log($"safe is {safeloc}");
 
-            navigation.SetWayPoints(new Vector3[] { safeloc });
+                navigation.SetWayPoints(new Vector3[] { safeloc });
 
-            onEnterTime = DateTime.UtcNow;
+                onEnterTime = DateTime.UtcNow;
+            }
+
         }
 
         public override void OnExit()
         {
             navigation.StopMovement();
             navigation.Stop();
+            
         }
 
         public override void Update()
@@ -102,7 +113,17 @@ namespace Core.Goals
             if (playerReader.Bits.IsDrowning())
                 input.Jump();
 
-            navigation.Update();
+            if (Math.Abs(addonReader.PlayerReader.PlayerLocation.X - safeloc.X) < 0.1 && Math.Abs(addonReader.PlayerReader.PlayerLocation.Y - safeloc.Y) < 0.1)
+            {
+                //we should set the pulled to false, because we alreay in position and should start combat
+                PulledState = false;
+            }
+            else
+            {
+                navigation.Update();
+            }
+
+            
 
             RandomJump();
 

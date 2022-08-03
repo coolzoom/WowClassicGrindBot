@@ -79,6 +79,7 @@ namespace Core.Goals
             AddPrecondition(GoapKey.withinpullrange, true);
 
             AddEffect(GoapKey.pulled, true);
+            PulledState = false;
         }
 
         public override void OnEnter()
@@ -131,6 +132,7 @@ namespace Core.Goals
 
             if (addonReader.DamageDoneCount() > 0)
             {
+                PulledState = true;
                 SendGoapEvent(new GoapStateEvent(GoapKey.pulled, true));
                 return;
             }
@@ -204,13 +206,14 @@ namespace Core.Goals
                             combatUtil.AquiredTarget(5000);
                             return;
                         }
-
+                        //PulledState = true;
                         SendGoapEvent(new GoapStateEvent(GoapKey.pulled, true));
                         return;
                     }
                 }
                 else if (playerReader.Bits.PlayerInCombat())
                 {
+                    //PulledState = true;
                     SendGoapEvent(new GoapStateEvent(GoapKey.pulled, true));
                     return;
                 }

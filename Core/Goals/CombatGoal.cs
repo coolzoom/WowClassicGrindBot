@@ -85,6 +85,9 @@ namespace Core.Goals
 
         public override void OnEnter()
         {
+            //we should set the pulled to false, because we alreay in combat
+            //SendGoapEvent(new GoapStateEvent(GoapKey.pulled, false));
+            //PulledState = false;
             if (mountHandler.IsMounted())
             {
                 mountHandler.Dismount();

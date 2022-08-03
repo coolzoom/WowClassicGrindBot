@@ -10,6 +10,7 @@ namespace Core.Goals
         public Dictionary<GoapKey, bool> Preconditions { get; } = new();
         public Dictionary<GoapKey, bool> Effects { get; } = new();
         public Dictionary<GoapKey, bool> State { get; private set; } = new();
+        public bool PulledState { get; set; } = false;
 
         private KeyAction[] keys = Array.Empty<KeyAction>();
         public KeyAction[] Keys
@@ -73,9 +74,9 @@ namespace Core.Goals
             Effects[key] = value;
         }
 
-        public void RemoveEffect(GoapKey key)
-        {
-            Effects.Remove(key);
-        }
+        //public void RemoveEffect(GoapKey key)
+        //{
+        //    Effects.Remove(key);
+        //}
     }
 }
