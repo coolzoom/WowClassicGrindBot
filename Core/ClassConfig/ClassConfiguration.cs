@@ -37,6 +37,8 @@ namespace Core
 
         public string PathFilename { get; set; } = string.Empty;
 
+        public string SafeLocationFilename { get; set; } = string.Empty;
+
         public string? OverridePathFilename { get; set; } = string.Empty;
 
         public bool PathThereAndBack { get; set; } = true;

@@ -242,6 +242,27 @@ namespace Core
             return path;
         }
 
+        private static Vector3[] GetSafeLocations(ClassConfiguration classConfig, DataConfig dataConfig)
+        {
+            classConfig.SafeLocationFilename = RelativeFilePath(dataConfig, classConfig.SafeLocationFilename);
+
+            Vector3[] rawPath = DeserializeObject<Vector3[]>(File.ReadAllText(classConfig.SafeLocationFilename));
+            if (!classConfig.PathReduceSteps)
+                return rawPath;
+
+            int step = 2;
+            int reducedLength = rawPath.Length % step == 0 ?
+                rawPath.Length / step :
+                (rawPath.Length / step) + 1;
+
+            Vector3[] path = new Vector3[reducedLength];
+            for (int i = 0; i < path.Length; i++)
+            {
+                path[i] = rawPath[i * step];
+            }
+            return path;
+        }
+
         public static Vector3[] GetPath(KeyAction keyAction, DataConfig dataConfig)
         {
             if (string.IsNullOrEmpty(keyAction.PathFilename))

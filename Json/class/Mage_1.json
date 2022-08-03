@@ -2,6 +2,7 @@
   "ClassName": "Mage",
   "Loot": true,
   "PathFilename": "1-5_Gnome.json",
+  "SafeLocationFilename": "1_Gnome_startzonesafe.json",
   "PathThereAndBack": true,
   "PathReduceSteps": false,
   "IntVariables": {
