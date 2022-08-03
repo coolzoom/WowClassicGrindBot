@@ -190,6 +190,7 @@ namespace Core.GOAP
 
         private Dictionary<GoapKey, bool> GetWorldState()
         {
+            //state
             return new()
             {
                 { GoapKey.hastarget, playerReader.Bits.HasTarget() },
@@ -211,7 +212,7 @@ namespace Core.GOAP
                     || playerReader.Bits.IsMounted() },
                 { GoapKey.withinpullrange, playerReader.WithInPullRange() },
                 { GoapKey.incombatrange, playerReader.WithInCombatRange() },
-                { GoapKey.pulled, false },
+                { GoapKey.pulled, CurrentGoal!=null?(CurrentGoal.Effects.ContainsKey(GoapKey.pulled)?CurrentGoal.Effects[GoapKey.pulled]:false):false},
                 { GoapKey.isdead, playerReader.Bits.DeadStatus() },
                 { GoapKey.isswimming, playerReader.Bits.IsSwimming() },
                 { GoapKey.itemsbroken, playerReader.Bits.ItemsAreBroken() },
