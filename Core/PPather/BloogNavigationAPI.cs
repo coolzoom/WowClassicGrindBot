@@ -75,7 +75,8 @@ namespace Core
                 if (debug)
                     LogInformation($"Finding route from {fromPoint}({start}) map {uiMapId} to {toPoint}({end}) map {uiMapId}...");
 
-                var ret = BloogNavigation.CalculatePath((uint)uiMapId, start, end, false);
+                //not working becuase the Z is not accurate
+                var ret = BloogNavigation.CalculatePath((uint)area.MapID, start, end, false);
 
                 List<Vector3> resuult = new List<Vector3>();
                 foreach (Vector3 v in ret)
