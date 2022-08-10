@@ -4,6 +4,10 @@ using SharedLib.NpcFinder;
 using System.Diagnostics;
 using System.Threading;
 using System.Linq;
+using Core.Goals;
+using System.Numerics;
+using System.Runtime.Serialization;
+using Core;
 
 #pragma warning disable 0162
 
@@ -17,6 +21,11 @@ namespace CoreTests
 
         public static void Main()
         {
+            Vector3 start = new Vector3 ((float)-614.7, (float)-4335.4, (float)40.4 );
+            Vector3 end = new Vector3 ( (float)-590.2, (float)-4206.1, (float)38.7 );
+
+            var path = BloogNavigation.CalculatePath(1, start, end, false);
+
             var logConfig = new LoggerConfiguration()
                 .WriteTo.File("names.log")
                 .WriteTo.Debug()

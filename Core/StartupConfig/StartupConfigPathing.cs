@@ -8,7 +8,8 @@
         {
             Local,
             RemoteV1,
-            RemoteV3
+            RemoteV3,
+            Bloog
         }
 
         public StartupConfigPathing() { }

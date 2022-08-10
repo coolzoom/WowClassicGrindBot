@@ -152,6 +152,18 @@ namespace BlazorServer
             Configuration.GetSection(StartupConfigPathing.Position).Bind(scp);
 
             bool failed = false;
+            if (scp.Type == StartupConfigPathing.Types.Bloog)
+            {
+                var api = new BloogNavigationAPI(logger, new WorldMapAreaDB(dataConfig));
+
+                Log.Information("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                Log.Debug($"Using {StartupConfigPathing.Types.Bloog}({api.GetType().Name})");
+                Log.Information("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                return api;
+
+                api.Dispose();
+                failed = true;
+            }
 
             if (scp.Type == StartupConfigPathing.Types.RemoteV3)
             {
