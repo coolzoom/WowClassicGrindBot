@@ -48,16 +48,6 @@ namespace Core
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask DrawLinesMem(List<LineArgs> lineArgs)
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask DrawSphereMem(SphereArgs args)
-        {
-            return ValueTask.CompletedTask;
-        }
-
         public ValueTask<List<Vector3>> FindRoute(int uiMapId, Vector3 fromPoint, Vector3 toPoint)
         {
 
@@ -105,38 +95,6 @@ namespace Core
                 return new ValueTask<List<Vector3>>();
             }
         }
-
-        public ValueTask<List<Vector3>> FindRouteMem(int mapidmem, Vector3 fromPoint, Vector3 toPoint)
-        {
-            try
-            {
-
-                List<Vector3> result = new();
-
-                Vector3 start = WorldMapAreaFactory.MapToWorld(fromPoint);
-                Vector3 end = WorldMapAreaFactory.MapToWorld(toPoint);
-
-                var ret = BloogNavigation.CalculatePath((uint)mapidmem, start, end, false);
-
-                List<Vector3> resuult = new List<Vector3>();
-                foreach (Vector3 v in ret)
-                {
-                    resuult.Add(SharedLib.Data.WorldMapAreaFactory.WorldToMap(v));
-                }
-                return new ValueTask<List<Vector3>>(resuult);
-            }
-            catch (Exception ex)
-            {
-                Vector3 start = WorldMapAreaFactory.MapToWorld(fromPoint);
-                Vector3 end = WorldMapAreaFactory.MapToWorld(toPoint);
-                LogError($"Finding route from {start} to {end}", ex);
-                Console.WriteLine(ex);
-                return new ValueTask<List<Vector3>>();
-            }
-        }
-
-
-
 
 
         #endregion old
