@@ -79,6 +79,7 @@ namespace Core
                 services.AddSingleton<GoapGoal, CombatGoal>();
                 services.AddSingleton<GoapGoal, ApproachTargetGoal>();
                 services.AddSingleton<GoapGoal, WaitForGatheringGoal>();
+                services.AddSingleton<GoapGoal, WalkToGatherGoal>();
                 services.AddSingleton<GoapGoal, FollowRouteGoal>();
 
                 ResolveLootAndSkin(services, classConfig);

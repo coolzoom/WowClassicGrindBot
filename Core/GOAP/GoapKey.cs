@@ -27,7 +27,9 @@
         targethostile,
         hasfocus,
         focushastarget,
-        consumablecorpsenearby
+        consumablecorpsenearby,
+        foundgathertarget,
+        reachgathertarget
     }
 
     public static class GoapKey_Extension
@@ -62,6 +64,8 @@
             GoapKey.targethostile => "Target Hostile",
             GoapKey.damagetakenordone => "Damage Taken or Done",
             GoapKey.consumablecorpsenearby => "Consume Corpse nearby",
+            GoapKey.foundgathertarget => "Found Gather Target",
+            GoapKey.reachgathertarget => "Reach Gather Target",
             _ => unknown
         };
 
@@ -93,6 +97,8 @@
             GoapKey.targethostile => "!Target Hostile",
             GoapKey.damagetakenordone => "!Damage Taken or Done",
             GoapKey.consumablecorpsenearby => "!Consume Corpse nearby",
+            GoapKey.foundgathertarget => "!Found Gather Target",
+            GoapKey.reachgathertarget => "!Reach Gather Target",
             _ => unknown
         };
 

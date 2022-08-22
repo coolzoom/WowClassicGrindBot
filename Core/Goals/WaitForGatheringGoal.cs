@@ -74,6 +74,7 @@ namespace Core.Goals
             this.stopWatch = new();
 
             AddPrecondition(GoapKey.gathering, true);
+            AddPrecondition(GoapKey.reachgathertarget, true);
         }
 
         public override void OnEnter()

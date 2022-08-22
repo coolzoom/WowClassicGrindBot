@@ -227,7 +227,9 @@ namespace Core.GOAP
                 { GoapKey.consumecorpse, State.ShouldConsumeCorpse },
                 { GoapKey.shouldloot, State.NeedLoot },
                 { GoapKey.shouldgather, State.NeedGather },
-                { GoapKey.gathering, State.Gathering }
+                { GoapKey.gathering, State.Gathering },
+                { GoapKey.foundgathertarget, playerReader.BestGatherPos.X !=0 && playerReader.BestGatherPos.Y!=0 },
+                { GoapKey.reachgathertarget, playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) < 3},
             };
         }
 
