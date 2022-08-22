@@ -36,7 +36,7 @@ namespace Core
 
         // TODO: adjust these values based on resolution
         // The reference resolution is 1920x1080
-        int MiniMapZoomLevel = 5; //0(default),1,2,3,4,5
+        int MiniMapZoomLevel=5; //0(default),1,2,3,4,5
         int minX = 0;
         int maxX = 168;
         int minY = 0;
@@ -74,6 +74,7 @@ namespace Core
         private List<Score> FindYellowPoints()
         {
             //find
+            MiniMapZoomLevel = addonReader.PlayerReader.MiniMapZoomLevel - 1;
             List<Score> points = new(100);
             Bitmap bitmap = wowScreen.MiniMapBitmap;
             int minX = 0;
