@@ -130,7 +130,7 @@ namespace Core.Goals
                 int SizeX = clientrect.Width / 2;
                 int StartY = clientrect.Height / 4;
                 int SizeY = clientrect.Height / 2;
-                int step = 100;
+                int step = 40;
 
                 for (int i = StartX; i < (StartX + SizeX); i = i + step)
                 {
