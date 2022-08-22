@@ -146,7 +146,7 @@ namespace Core
         {
             try
             {
-                CopyFolder("");
+                CopyFolder(AppDomain.CurrentDomain.BaseDirectory);
                 logger.LogInformation($"{nameof(AddonConfigurator)}.{nameof(CopyAddonFiles)} - Success");
             }
             catch (Exception e)
@@ -154,7 +154,7 @@ namespace Core
                 logger.LogError(e.Message);
 
                 // This only should be happen when running from IDE
-                CopyFolder(".");
+                CopyFolder(AppDomain.CurrentDomain.BaseDirectory);
                 logger.LogInformation($"{nameof(AddonConfigurator)}.{nameof(CopyAddonFiles)} - Success");
             }
         }
