@@ -94,9 +94,15 @@ namespace Core.Goals
 
         public override void Update()
         {
-            if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos)>3)
+            if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos)>2)
             {
                 navigation.Update();
+
+                //if reach the final still not close, do navigate again
+                if (!navigation.HasWaypoint())
+                {
+                    navigation.SetWorldWayPoints(new Vector3[] { playerReader.BestGatherPos });
+                }
             }
             else
             {

@@ -229,7 +229,7 @@ namespace Core.GOAP
                 { GoapKey.shouldgather, State.NeedGather },
                 { GoapKey.gathering, State.Gathering },
                 { GoapKey.foundgathertarget, playerReader.BestGatherPos.X !=0 && playerReader.BestGatherPos.Y!=0 },
-                { GoapKey.reachgathertarget, playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) < 3},
+                { GoapKey.reachgathertarget, playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) < 2},
             };
         }
 
