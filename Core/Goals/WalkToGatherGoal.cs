@@ -17,8 +17,6 @@ namespace Core.Goals
         private readonly ILogger logger;
         private readonly Wait wait;
         private readonly ConfigurableInput input;
-        private readonly IBitmapProvider bitmapProvider;
-        private readonly WowProcessInput wowProcessInput;
         private readonly AddonReader addonReader;
         private readonly PlayerReader playerReader;
         private readonly Navigation navigation;
@@ -47,14 +45,12 @@ namespace Core.Goals
 
         #endregion
 
-        public WalkToGatherGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving, WowProcessInput wowProcessInput, IBitmapProvider bitmapProvider)
+        public WalkToGatherGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving)
             : base(nameof(WalkToCorpseGoal))
         {
             this.logger = logger;
             this.wait = wait;
             this.input = input;
-            this.wowProcessInput = wowProcessInput;
-            this.bitmapProvider = bitmapProvider;
 
             this.addonReader = addonReader;
             this.playerReader = addonReader.PlayerReader;
@@ -85,7 +81,7 @@ namespace Core.Goals
 
             Log($"Found Gather Target!");
 
-            navigation.SetWayPoints(new Vector3[] { playerReader.BestGatherPos });
+            navigation.SetWorldWayPoints(new Vector3[] { playerReader.BestGatherPos });
 
             onEnterTime = DateTime.UtcNow;
         }
@@ -106,10 +102,7 @@ namespace Core.Goals
             {
                 stopMoving.Stop();
                 navigation.ResetStuckParameters();
-                //set cusor to center screen
-                Point p = new System.Drawing.Point(bitmapProvider.Rect.Width / 2, bitmapProvider.Rect.Height / 2);
-                wowProcessInput.SetCursorPosition(p);
-                input.Interact();
+
             }
 
             RandomJump();
