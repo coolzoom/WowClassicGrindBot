@@ -46,6 +46,7 @@ namespace Core
 
         private List<Score> FindYellowPoints()
         {
+            //find
             List<Score> points = new(100);
             Bitmap bitmap = wowScreen.MiniMapBitmap;
 

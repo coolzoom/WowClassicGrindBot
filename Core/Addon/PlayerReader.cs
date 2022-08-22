@@ -109,7 +109,7 @@ namespace Core
         public RecordInt PlayerXp { get; } = new(50);
 
         public int PlayerMaxXp => reader.GetInt(51);
-        public int PlayerXpPercentage => PlayerXp.Value * 100 / PlayerMaxXp;
+        public int PlayerXpPercentage => (PlayerXp.Value * 100 + 1) / (PlayerMaxXp + 1);
 
         private UI_ERROR UIError => (UI_ERROR)reader.GetInt(52);
         public UI_ERROR LastUIError { get; set; }

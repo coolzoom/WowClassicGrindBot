@@ -3,7 +3,7 @@
   "Loot": true,
   "NPCMaxLevels_Below": 7,
   "NPCMaxLevels_Above": 2,
-  "PathFilename": "Mine_Hinterlands.json",
+  "PathFilename": "_herb\\40_Westfall_herb_optimal.json",
   "PathThereAndBack": false,
   "PathReduceSteps": false,
   "Mode": "AttendedGather",
