@@ -20,7 +20,7 @@ namespace Game
         private readonly List<Action<Graphics>> drawActions = new();
 
         // TODO: make it work for higher resolution ex. 4k
-        public const int MinimapSize = 168;
+        public int MinimapSize { get; set; } = 168;
         public const int MinimapRightOffset = 27;
         public const int MinimapTopOffset = 32;
 

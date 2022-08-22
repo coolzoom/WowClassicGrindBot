@@ -36,6 +36,7 @@ namespace Core
 
         // TODO: adjust these values based on resolution
         // The reference resolution is 1920x1080
+        int MiniMapZoomLevel = 5; //0(default),1,2,3,4,5
         int minX = 0;
         int maxX = 168;
         int minY = 0;
@@ -58,7 +59,7 @@ namespace Core
 
             var list = FindYellowPoints();
             ScorePoints(list, out Score best);
-            addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y);
+            addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
             NodeEvent?.Invoke(this, new MinimapNodeEventArgs(best.X, best.Y, list.Count(x => x.count > MinScore)));
         }
 
@@ -116,13 +117,13 @@ namespace Core
             return points;
         }
 
-        public Vector3 GetMiniMapWorldLoc(int x, int y)
+        public Vector3 GetMiniMapWorldLoc(int x, int y, int minimapzoomlevel)
         {
             //zoom from 0-5
-            //at Zoom5, the world size covered by the minimap is 60,60
-            //at Zoom0(default zoom), the world size covered by the minimap is 220,220
+            //at Zoom5, the world size covered by the minimap is 120,120
+            //at Zoom0(default zoom), the world size covered by the minimap is 440,440
             //Also tested few other zoom and it looks that
-            //the size vs zoom can be calculated by size = 220 - (GetZoom * 32)(edited)
+            //the size vs zoom can be calculated by size = 440 - (GetZoom * 64)(edited)
             //while at 1920x1080, the minimap world size is at 168px x 168px (166x166 probably ok as well)
             //               x+
             //world map   y+ p  y-
@@ -131,8 +132,8 @@ namespace Core
             //               y-
             //image       x- p  x+
             //               y+
-
-            float distanceperpixel = 0.71423f; //(120 / 168); //zoom 5
+            float worldsize = 440 - (minimapzoomlevel * 64);
+            float distanceperpixel = worldsize/wowScreen.MinimapSize; //0.71423f; //(120 / 168); //zoom 5
             int xoff = x - center.X;
             int yoff = y - center.Y;
             float finalx = (float)(addonReader.PlayerReader.WorldPos.X - yoff * distanceperpixel);
