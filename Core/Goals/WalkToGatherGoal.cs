@@ -59,7 +59,7 @@ namespace Core.Goals
             this.navigation = navigation;
 
             AddPrecondition(GoapKey.foundgathertarget, true);
-            
+            AddPrecondition(GoapKey.incombat, false);
         }
 
         public void Dispose()
