@@ -147,6 +147,7 @@ namespace Core.Goals
                         {
                             wait.Update();
                             input.Proc.InteractMouseOver();
+                            ct.WaitHandle.WaitOne(6000);//wait till cast finish
                             break;
                         }
 
