@@ -59,7 +59,15 @@ namespace Core
 
             var list = FindYellowPoints();
             ScorePoints(list, out Score best);
-            addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
+            if (best.X != 0 && best.Y != 0)
+            {
+                addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
+            }
+            else
+            {
+                addonReader.PlayerReader.BestGatherPos = new Vector3();
+            }
+            
             NodeEvent?.Invoke(this, new MinimapNodeEventArgs(best.X, best.Y, list.Count(x => x.count > MinScore)));
         }
 
