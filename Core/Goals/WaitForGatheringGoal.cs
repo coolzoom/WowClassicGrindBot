@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System;
 using System.Drawing;
+using SharedLib.NpcFinder;
 
 namespace Core.Goals
 {
@@ -31,7 +32,8 @@ namespace Core.Goals
         private readonly PlayerReader playerReader;
         private readonly StopMoving stopMoving;
         private readonly Stopwatch stopWatch;
-
+        private readonly NpcNameFinder npcNameFinder;
+        private readonly ConfigurableInput input;
         private readonly int[] herbSpells = new int[]
         {
             2366,
@@ -65,7 +67,7 @@ namespace Core.Goals
         private CastState state;
         private int lastKnownCast;
 
-        public WaitForGatheringGoal(ILogger logger, Wait wait, PlayerReader playerReader, StopMoving stopMoving)
+        public WaitForGatheringGoal(ILogger logger, Wait wait, PlayerReader playerReader, StopMoving stopMoving, ConfigurableInput input, NpcNameFinder npcNameFinder)
             : base(nameof(WaitForGatheringGoal))
         {
             this.logger = logger;
@@ -73,21 +75,35 @@ namespace Core.Goals
             this.playerReader = playerReader;
             this.stopMoving = stopMoving;
             this.stopWatch = new();
-
+            this.npcNameFinder = npcNameFinder;
+            this.input = input;
             AddPrecondition(GoapKey.gathering, true);
             AddPrecondition(GoapKey.reachgathertarget, true);
         }
 
         public override void OnEnter()
         {
+            stopMoving.Stop();
 
             //set cusor to center screen
-            //Point p = new System.Drawing.Point(bitmapProvider.Rect.Width / 2, bitmapProvider.Rect.Height / 2);
-            //i.SetCursorPosition(p);
-            //input.Interact();
+            Rectangle clientrect = npcNameFinder.GetClientRect();
+
+            Point clickPostion = new Point(clientrect.X + clientrect.Width / 2, clientrect.Top + clientrect.Y / 2);//center of the client
+            input.Proc.SetCursorPosition(clickPostion);
+            //cursor classifier
+            CursorClassifier.Classify(out CursorType cls);
+
+            if (cls == CursorType.Mine || cls == CursorType.Herb)
+            {
+                //open the door
+                input.Proc.KeyPress(ConsoleKey.I, 6000);
+                input.Proc.KeyPress(input.Proc.ForwardKey, 500);
+                //press any key to wait door close
+                input.Proc.KeyPress(ConsoleKey.I, 6000);
+            }
 
 
-            stopMoving.Stop();
+            
             wait.Update();
 
             while (playerReader.Bits.IsFalling())

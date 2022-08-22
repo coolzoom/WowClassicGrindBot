@@ -216,6 +216,11 @@ namespace SharedLib.NpcFinder
             return true;
         }
 
+        public Rectangle GetClientRect()
+        {
+            return bitmapProvider.Rect;
+        }
+
         private void UpdateSearchMode()
         {
             switch (searchMode)

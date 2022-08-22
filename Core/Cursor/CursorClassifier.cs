@@ -39,12 +39,12 @@ namespace Core
             }
 
             ulong cursorHash = ImageHashing.AverageHash(bitmap);
-            //var filename = hash + ".bmp";
-            //var path = System.IO.Path.Join("../Cursors/", filename);
-            //if (!System.IO.File.Exists(path))
-            //{
-            //    bitmap.Save(path);
-            //}
+            var filename = cursorHash + ".bmp";
+            var path = System.IO.Path.Join("../Cursors/", filename);
+            if (!System.IO.File.Exists(path))
+            {
+                bitmap.Save(path);
+            }
 
             var matching = imageHashes
                 .SelectMany((a, i) => a.Select(v => (similarity: ImageHashing.Similarity(cursorHash, v), index: i, imagehash: a)))
