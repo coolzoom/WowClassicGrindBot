@@ -21,7 +21,7 @@ namespace Game
 
         // TODO: make it work for higher resolution ex. 4k
         public const int MinimapSize = 168;
-        public const int MinimapRightOffset = 28;
+        public const int MinimapRightOffset = 27;
         public const int MinimapTopOffset = 32;
 
         public bool Enabled { get; set; }

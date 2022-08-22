@@ -123,7 +123,7 @@ namespace Core
             //at Zoom0(default zoom), the world size covered by the minimap is 220,220
             //Also tested few other zoom and it looks that
             //the size vs zoom can be calculated by size = 220 - (GetZoom * 32)(edited)
-            //while at 1920x1080, the minimap world size is at 168px x 168px
+            //while at 1920x1080, the minimap world size is at 168px x 168px (166x166 probably ok as well)
             //               x+
             //world map   y+ p  y-
             //               x-
@@ -132,7 +132,7 @@ namespace Core
             //image       x- p  x+
             //               y+
 
-            double distanceperpixel = 0.3571;// (60 / 168);
+            float distanceperpixel = 0.71423f; //(120 / 168); //zoom 5
             int xoff = x - center.X;
             int yoff = y - center.Y;
             float finalx = (float)(addonReader.PlayerReader.WorldPos.X - yoff * distanceperpixel);
