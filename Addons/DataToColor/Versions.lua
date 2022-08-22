@@ -44,6 +44,8 @@ elseif WOW_PROJECT_ID == WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
 		DataToColor.ClientVersion = 4
 	elseif LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_BURNING_CRUSADE then
 		DataToColor.ClientVersion = 3
+	elseif LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_WRATH_OF_THE_LICH_KING then
+		DataToColor.ClientVersion = 3
 	end
 elseif WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then
 	DataToColor.ClientVersion = 2
