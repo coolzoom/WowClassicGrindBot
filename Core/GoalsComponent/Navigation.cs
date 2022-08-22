@@ -336,6 +336,29 @@ namespace Core.Goals
             UpdateTotalRoute();
         }
 
+        public void SetWorldWayPoints(Vector3[] worldPoints)
+        {
+            wayPoints.Clear();
+            routeToNextWaypoint.Clear();
+
+            float worldDistanceXY = 0;
+            Array.Reverse(worldPoints);
+            for (int i = 0; i < worldPoints.Length; i++)
+            {
+                Vector3 worldPos = worldPoints[i];
+                if (i > 0)
+                {
+                    Vector3 last = wayPoints.Peek();
+                    worldDistanceXY += worldPos.WorldDistanceXYTo(last);
+                }
+                wayPoints.Push(worldPos);
+            }
+
+            AvgDistance = wayPoints.Count > 1 ? Max(worldDistanceXY / wayPoints.Count, MinDistance) : MinDistance;
+
+            UpdateTotalRoute();
+        }
+
         public void ResetStuckParameters()
         {
             stuckDetector.Reset();
