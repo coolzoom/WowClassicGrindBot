@@ -5,11 +5,20 @@
 <button class="btn btn-sm btn-primary" @onclick="InitState">
     <span>Init State</span>
 </button>
-
+<button class="btn btn-sm btn-primary" @onclick="ShowPlayerArrow">
+    <span>ShowPlayerArrow</span>
+</button>
 @code {
     private void InitState()
     {
         addonReader.FullReset();
         exec.Run($"/{addonConfigurator.Config.CommandFlush}");
+        addonReader.PlayerReader.SetMinimapZoomLevel(6);
+    }
+    private void ShowPlayerArrow()
+    {
+        exec.Run("/script Minimap:SetPlayerTexture(\"Interface\\\\Minimap\\\\MinimapArrow\")");
+        ///script Minimap:SetPlayerTexture("")
+        ///script Minimap:SetPlayerTexture("Interface\\Minimap\\MinimapArrow")
     }
 }

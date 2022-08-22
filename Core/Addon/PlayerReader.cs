@@ -187,6 +187,9 @@ namespace Core
         {
             MiniMapZoomLevel = level1to6;
             execGameCommand.Run($"/script Minimap:SetZoom({level1to6})");
+            execGameCommand.Run("/script Minimap:SetPlayerTexture(\"\") ");
+            ///script Minimap:SetPlayerTexture("") 
+            ///script Minimap:SetPlayerTexture("Interface\\Minimap\\MinimapArrow") 
         }
 
         public void Update(IAddonDataProvider reader)
