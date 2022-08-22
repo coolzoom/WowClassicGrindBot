@@ -37,7 +37,7 @@ namespace Core
         // TODO: adjust these values based on resolution
         // The reference resolution is 1920x1080
         const int minX = 6;
-        const int maxX = 170;
+        const int maxX = 174;
         const int minY = 36;
         int maxY;
 
@@ -58,7 +58,7 @@ namespace Core
 
             var list = FindYellowPoints();
             ScorePoints(list, out Score best);
-            Vector3 vBest = GetMiniMapWorldLoc(best.X, best.Y);
+            addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y);
             NodeEvent?.Invoke(this, new MinimapNodeEventArgs(best.X, best.Y, list.Count(x => x.count > MinScore)));
         }
 
