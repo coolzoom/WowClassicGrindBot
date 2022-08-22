@@ -30,6 +30,8 @@ namespace Core
 
         public float WorldPosZ { get; set; } // MapZ not exists. Alias for WorldLoc.Z
 
+        public Vector3 BestGatherPos { get; set; }
+
         public float MapX => reader.GetFixed(1) * 10;
         public float MapY => reader.GetFixed(2) * 10;
         

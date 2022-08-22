@@ -24,7 +24,7 @@ namespace Core
 
         private readonly ILogger logger;
         private readonly WowScreen wowScreen;
-        private readonly PlayerReader playerReader;
+        private readonly IAddonReader addonReader;
         public event EventHandler<MinimapNodeEventArgs>? NodeEvent;
 
         private const int MinScore = 2;
@@ -45,11 +45,11 @@ namespace Core
         Point center;
         float radius;
 
-        public MinimapNodeFinder(ILogger logger, WowScreen wowScreen, PlayerReader playerReader)
+        public MinimapNodeFinder(ILogger logger, WowScreen wowScreen, IAddonReader addonReader)
         {
             this.logger = logger;
             this.wowScreen = wowScreen;
-            this.playerReader = playerReader;
+            this.addonReader = addonReader;
         }
 
         public void TryFind()
@@ -129,12 +129,12 @@ namespace Core
             //image       x- p  x+
             //               y+
 
-            float distanceperpixel = 220 / 168;
+            double distanceperpixel = 0.3571;// (60 / 168);
             int xoff = x - center.X;
             int yoff = y - center.Y;
-            float finalx = playerReader.WorldPos.X - yoff * distanceperpixel;
-            float finaly = playerReader.WorldPos.Y - yoff * distanceperpixel;
-            Vector3 vector3 = new Vector3(finalx, finaly, playerReader.WorldPosZ);
+            float finalx = (float)(addonReader.PlayerReader.WorldPos.X - yoff * distanceperpixel);
+            float finaly = (float)(addonReader.PlayerReader.WorldPos.Y - xoff * distanceperpixel);
+            Vector3 vector3 = new Vector3(finalx, finaly, addonReader.PlayerReader.WorldPosZ);
             return vector3;
         }
 

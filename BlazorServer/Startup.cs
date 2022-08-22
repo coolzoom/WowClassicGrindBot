@@ -98,6 +98,7 @@ namespace BlazorServer
             services.AddSingleton<ExecGameCommand>();
             services.AddSingleton<AddonConfigurator>();
 
+
             services.AddSingleton<DataFrame[]>(x => FrameConfig.LoadFrames());
             services.AddSingleton<FrameConfigurator>();
 
@@ -105,7 +106,6 @@ namespace BlazorServer
 
             if (AddonConfig.Exists() && FrameConfig.Exists())
             {
-                services.AddSingleton<MinimapNodeFinder>();
 
                 services.AddSingleton<IGrindSessionDAO, LocalGrindSessionDAO>();
                 services.AddSingleton<WorldMapAreaDB>();
@@ -133,6 +133,9 @@ namespace BlazorServer
                 services.AddSingleton<TalentDB>();
 
                 services.AddSingleton<IAddonReader, AddonReader>();
+
+                services.AddSingleton<MinimapNodeFinder>();
+
                 services.AddSingleton<IBotController, BotController>();
             }
             else
