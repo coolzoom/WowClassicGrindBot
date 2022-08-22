@@ -46,7 +46,7 @@ namespace Core.Goals
         #endregion
 
         public WalkToGatherGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving)
-            : base(nameof(WalkToCorpseGoal))
+            : base(nameof(WalkToGatherGoal))
         {
             this.logger = logger;
             this.wait = wait;
@@ -102,7 +102,7 @@ namespace Core.Goals
                 if (!navigation.HasWaypoint())
                 {
                     //use better resulution
-                    playerReader.SetMinimapZoomLevel(6);
+                    //playerReader.SetMinimapZoomLevel(6);
 
                     navigation.SetWorldWayPoints(new Vector3[] { playerReader.BestGatherPos });
                 }
@@ -112,7 +112,7 @@ namespace Core.Goals
                 stopMoving.Stop();
                 navigation.ResetStuckParameters();
                 //reset zoom to 1
-                playerReader.SetMinimapZoomLevel(1);
+                //playerReader.SetMinimapZoomLevel(1);
             }
 
             RandomJump();
