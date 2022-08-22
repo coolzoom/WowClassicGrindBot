@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Game;
@@ -23,16 +24,32 @@ namespace Core
 
         private readonly ILogger logger;
         private readonly WowScreen wowScreen;
+        private readonly PlayerReader playerReader;
         public event EventHandler<MinimapNodeEventArgs>? NodeEvent;
 
         private const int MinScore = 2;
         private const int MaxBlue = 34;
         private const int MinRedGreen = 176;
 
-        public MinimapNodeFinder(ILogger logger, WowScreen wowScreen)
+
+        //minimap 
+
+        // TODO: adjust these values based on resolution
+        // The reference resolution is 1920x1080
+        const int minX = 6;
+        const int maxX = 170;
+        const int minY = 36;
+        int maxY;
+
+        Rectangle rect;
+        Point center;
+        float radius;
+
+        public MinimapNodeFinder(ILogger logger, WowScreen wowScreen, PlayerReader playerReader)
         {
             this.logger = logger;
             this.wowScreen = wowScreen;
+            this.playerReader = playerReader;
         }
 
         public void TryFind()
@@ -41,6 +58,7 @@ namespace Core
 
             var list = FindYellowPoints();
             ScorePoints(list, out Score best);
+            Vector3 vBest = GetMiniMapWorldLoc(best.X, best.Y);
             NodeEvent?.Invoke(this, new MinimapNodeEventArgs(best.X, best.Y, list.Count(x => x.count > MinScore)));
         }
 
@@ -49,17 +67,11 @@ namespace Core
             //find
             List<Score> points = new(100);
             Bitmap bitmap = wowScreen.MiniMapBitmap;
+            maxY = bitmap.Height - 6;
 
-            // TODO: adjust these values based on resolution
-            // The reference resolution is 1920x1080
-            const int minX = 6;
-            const int maxX = 170;
-            const int minY = 36;
-            int maxY = bitmap.Height - 6;
-
-            Rectangle rect = new(minX, minY, maxX - minX, maxY - minY);
-            Point center = rect.Centre();
-            float radius = (maxX - minX) / 2f;
+            rect = new(minX, minY, maxX - minX, maxY - minY);
+            center = rect.Centre();
+            radius = (maxX - minX) / 2f;
 
             unsafe
             {
@@ -99,6 +111,31 @@ namespace Core
             }
 
             return points;
+        }
+
+        public Vector3 GetMiniMapWorldLoc(int x, int y)
+        {
+            //zoom from 0-5
+            //at Zoom5, the world size covered by the minimap is 60,60
+            //at Zoom0(default zoom), the world size covered by the minimap is 220,220
+            //Also tested few other zoom and it looks that
+            //the size vs zoom can be calculated by size = 220 - (GetZoom * 32)(edited)
+            //while at 1920x1080, the minimap world size is at 168px x 168px
+            //               x+
+            //world map   y+ p  y-
+            //               x-
+
+            //               y-
+            //image       x- p  x+
+            //               y+
+
+            float distanceperpixel = 220 / 168;
+            int xoff = x - center.X;
+            int yoff = y - center.Y;
+            float finalx = playerReader.WorldPos.X - yoff * distanceperpixel;
+            float finaly = playerReader.WorldPos.Y - yoff * distanceperpixel;
+            Vector3 vector3 = new Vector3(finalx, finaly, playerReader.WorldPosZ);
+            return vector3;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
