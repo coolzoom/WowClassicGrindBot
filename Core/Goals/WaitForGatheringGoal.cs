@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System;
+using System.Drawing;
 
 namespace Core.Goals
 {
@@ -79,6 +80,13 @@ namespace Core.Goals
 
         public override void OnEnter()
         {
+
+            //set cusor to center screen
+            //Point p = new System.Drawing.Point(bitmapProvider.Rect.Width / 2, bitmapProvider.Rect.Height / 2);
+            //i.SetCursorPosition(p);
+            //input.Interact();
+
+
             stopMoving.Stop();
             wait.Update();
 
