@@ -8,12 +8,15 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Numerics;
+using System.Threading;
 
 namespace Core.Goals
 {
     public partial class WalkToGatherGoal : GoapGoal, IGoapEventListener, IRouteProvider, IDisposable
     {
         public override float Cost => 1f;
+        private const int FAST_DELAY = 5;
+        private readonly CancellationToken ct;
 
         private readonly ILogger logger;
         private readonly Wait wait;
@@ -47,12 +50,13 @@ namespace Core.Goals
 
         #endregion
 
-        public WalkToGatherGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving, NpcNameFinder npcNameFinder)
+        public WalkToGatherGoal(ILogger logger, CancellationTokenSource cts, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving, NpcNameFinder npcNameFinder)
             : base(nameof(WalkToGatherGoal))
         {
             this.logger = logger;
             this.wait = wait;
             this.input = input;
+            ct = cts.Token;
 
             this.addonReader = addonReader;
             this.playerReader = addonReader.PlayerReader;
@@ -135,12 +139,13 @@ namespace Core.Goals
 
                         Point clickPostion = npcNameFinder.ToScreenCoordinates(i, j);
                         input.Proc.SetCursorPosition(clickPostion);
-
+                        ct.WaitHandle.WaitOne(FAST_DELAY);
                         //cursor classifier
                         CursorClassifier.Classify(out CursorType cls);
 
                         if (cls == CursorType.Mine || cls == CursorType.Herb)
                         {
+                            wait.Update();
                             input.Proc.InteractMouseOver();
                             break;
                         }
