@@ -67,6 +67,8 @@ namespace Core
             else
             {
                 addonReader.PlayerReader.BestGatherPos = new Vector3();
+                //WIP try to change herb/mine
+                
             }
 
             //we should not add more if player bestgatherpos is not empty,it wil jumping around if there is few nodes near together
