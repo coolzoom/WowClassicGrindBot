@@ -36,10 +36,10 @@ namespace Core
 
         // TODO: adjust these values based on resolution
         // The reference resolution is 1920x1080
-        const int minX = 6;
-        const int maxX = 174;
-        const int minY = 36;
-        int maxY;
+        int minX = 0;
+        int maxX = 168;
+        int minY = 0;
+        int maxY = 168;
 
         Rectangle rect;
         Point center;
@@ -67,7 +67,10 @@ namespace Core
             //find
             List<Score> points = new(100);
             Bitmap bitmap = wowScreen.MiniMapBitmap;
-            maxY = bitmap.Height - 6;
+            int minX = 0;
+            int maxX = wowScreen.MiniMapBitmap.Width;
+            int minY = 0;
+            int maxY = wowScreen.MiniMapBitmap.Height;
 
             rect = new(minX, minY, maxX - minX, maxY - minY);
             center = rect.Centre();

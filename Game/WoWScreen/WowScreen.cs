@@ -20,7 +20,9 @@ namespace Game
         private readonly List<Action<Graphics>> drawActions = new();
 
         // TODO: make it work for higher resolution ex. 4k
-        public const int MinimapSize = 200;
+        public const int MinimapSize = 168;
+        public const int MinimapRightOffset = 28;
+        public const int MinimapTopOffset = 32;
 
         public bool Enabled { get; set; }
 
@@ -115,7 +117,7 @@ namespace Game
         public void UpdateMinimapBitmap()
         {
             GetRectangle(out var rect);
-            graphicsMinimap.CopyFromScreen(rect.Right - MinimapSize, rect.Top, 0, 0, MiniMapBitmap.Size);
+            graphicsMinimap.CopyFromScreen(rect.Right - MinimapSize - MinimapRightOffset, rect.Top + MinimapTopOffset, 0, 0, MiniMapBitmap.Size);
         }
 
         public void Dispose()
