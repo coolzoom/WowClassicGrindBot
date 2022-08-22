@@ -80,7 +80,7 @@ namespace Core.Goals
 
             this.input = input;
             AddPrecondition(GoapKey.gathering, true);
-            //AddPrecondition(GoapKey.reachgathertarget, true);
+            AddPrecondition(GoapKey.reachgathertarget, true);
             
         }
 
