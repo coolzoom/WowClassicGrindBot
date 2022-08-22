@@ -34,6 +34,7 @@ namespace Core.Goals
         private readonly Stopwatch stopWatch;
         private readonly NpcNameFinder npcNameFinder;
         private readonly ConfigurableInput input;
+
         private readonly int[] herbSpells = new int[]
         {
             2366,
@@ -67,7 +68,7 @@ namespace Core.Goals
         private CastState state;
         private int lastKnownCast;
 
-        public WaitForGatheringGoal(ILogger logger, Wait wait, PlayerReader playerReader, StopMoving stopMoving, ConfigurableInput input, NpcNameFinder npcNameFinder)
+        public WaitForGatheringGoal(ILogger logger, Wait wait, PlayerReader playerReader, StopMoving stopMoving, ConfigurableInput input, NpcNameFinder npcNameFinder, ExecGameCommand execGameCommand)
             : base(nameof(WaitForGatheringGoal))
         {
             this.logger = logger;
@@ -76,9 +77,11 @@ namespace Core.Goals
             this.stopMoving = stopMoving;
             this.stopWatch = new();
             this.npcNameFinder = npcNameFinder;
+
             this.input = input;
             AddPrecondition(GoapKey.gathering, true);
             AddPrecondition(GoapKey.reachgathertarget, true);
+            
         }
 
         public override void OnEnter()
@@ -95,10 +98,9 @@ namespace Core.Goals
 
             if (cls == CursorType.Mine || cls == CursorType.Herb)
             {
-                //open the door
+                //open
                 input.Proc.KeyPress(ConsoleKey.I, 6000);
-                input.Proc.KeyPress(input.Proc.ForwardKey, 500);
-                //press any key to wait door close
+                //try again
                 input.Proc.KeyPress(ConsoleKey.I, 6000);
             }
 

@@ -101,6 +101,9 @@ namespace Core.Goals
                 //if reach the final still not close, do navigate again
                 if (!navigation.HasWaypoint())
                 {
+                    //use better resulution
+                    playerReader.SetMinimapZoomLevel(6);
+
                     navigation.SetWorldWayPoints(new Vector3[] { playerReader.BestGatherPos });
                 }
             }
@@ -108,7 +111,8 @@ namespace Core.Goals
             {
                 stopMoving.Stop();
                 navigation.ResetStuckParameters();
-
+                //reset zoom to 1
+                playerReader.SetMinimapZoomLevel(1);
             }
 
             RandomJump();

@@ -9,11 +9,12 @@ namespace Core
     {
         private readonly IAddonDataProvider reader;
         private readonly WorldMapAreaDB worldMapAreaDB;
+        private readonly ExecGameCommand execGameCommand;
 
-        public PlayerReader(IAddonDataProvider reader, WorldMapAreaDB mapAreaDB)
+        public PlayerReader(IAddonDataProvider reader, WorldMapAreaDB mapAreaDB, ExecGameCommand execGameCommand)
         {
             this.worldMapAreaDB = mapAreaDB;
-
+            this.execGameCommand = execGameCommand;
             this.reader = reader;
             Bits = new(8, 9);
             SpellInRange = new(40);
@@ -31,6 +32,8 @@ namespace Core
         public float WorldPosZ { get; set; } // MapZ not exists. Alias for WorldLoc.Z
 
         public Vector3 BestGatherPos { get; set; }
+        public int MiniMapZoomLevel { get; set; } = 1; //1-6
+
 
         public float MapX => reader.GetFixed(1) * 10;
         public float MapY => reader.GetFixed(2) * 10;
@@ -179,6 +182,12 @@ namespace Core
 
         public int FocusGuid => reader.GetInt(77);
         public int FocusTargetGuid => reader.GetInt(78);
+
+        public void SetMinimapZoomLevel(int level1to6)
+        {
+            MiniMapZoomLevel = level1to6;
+            execGameCommand.Run($"/script Minimap:SetZoom({level1to6})");
+        }
 
         public void Update(IAddonDataProvider reader)
         {

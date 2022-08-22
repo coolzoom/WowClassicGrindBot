@@ -46,6 +46,7 @@ namespace Core
         public event Action? PlayerDeath;
 
         public WorldMapAreaDB WorldMapAreaDb { get; }
+        public ExecGameCommand execGameCommand { get; }
 
         public ItemDB ItemDb { get; }
         public CreatureDB CreatureDb { get; }
@@ -69,7 +70,7 @@ namespace Core
 
         public AddonReader(ILogger logger, IAddonDataProvider reader,
             AutoResetEvent autoResetEvent, AreaDB areaDB, WorldMapAreaDB worldMapAreaDB,
-            ItemDB itemDB, CreatureDB creatureDB, SpellDB spellDB, TalentDB talentDB)
+            ItemDB itemDB, CreatureDB creatureDB, SpellDB spellDB, TalentDB talentDB, ExecGameCommand execGameCommand)
         {
             this.logger = logger;
             this.reader = reader;
@@ -79,7 +80,7 @@ namespace Core
             this.WorldMapAreaDb = worldMapAreaDB;
             this.ItemDb = itemDB;
             this.CreatureDb = creatureDB;
-
+            this.execGameCommand = execGameCommand;
             this.CombatLog = new(64, 65, 66, 67);
 
             this.EquipmentReader = new(ItemDb, 23, 24);
@@ -92,7 +93,7 @@ namespace Core
 
             this.SpellBookReader = new(71, spellDB);
 
-            this.PlayerReader = new(reader, worldMapAreaDB);
+            this.PlayerReader = new(reader, worldMapAreaDB, execGameCommand);
             this.LevelTracker = new(this);
             this.TalentReader = new(72, PlayerReader, talentDB);
 
@@ -104,6 +105,7 @@ namespace Core
             this.TargetBuffTimeReader = new(83, 84);
 
             lastUpdate = DateTime.UtcNow;
+            
         }
 
         public void Dispose()
