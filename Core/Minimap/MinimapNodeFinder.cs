@@ -59,6 +59,7 @@ namespace Core
 
             var list = FindYellowPoints();
             ScorePoints(list, out Score best);
+
             if (best.X != 0 && best.Y != 0)
             {
                 addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
@@ -67,6 +68,14 @@ namespace Core
             {
                 addonReader.PlayerReader.BestGatherPos = new Vector3();
             }
+
+            //we should not add more if player bestgatherpos is not empty,it wil jumping around if there is few nodes near together
+            //also remember to clear bestgatherpos
+            if (addonReader.PlayerReader.BestGatherPos.X==0 && addonReader.PlayerReader.BestGatherPos.Y==0)
+            {
+  
+            }
+
             
             NodeEvent?.Invoke(this, new MinimapNodeEventArgs(best.X, best.Y, list.Count(x => x.count > MinScore)));
         }
