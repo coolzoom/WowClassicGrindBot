@@ -6,6 +6,8 @@
   "PathFilename": "_herb\\40_Westfall_herb_optimal.json",
   "PathThereAndBack": true,
   "PathReduceSteps": false,
+  "UseMount":true,
+  "MountKey":5,
   "Mode": "AttendedGather",
   "IntVariables": {
     "MIN_WATER%": 20,
