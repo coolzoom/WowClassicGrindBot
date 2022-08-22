@@ -11,5 +11,6 @@ namespace Core.GOAP
         public int ConsumableCorpseCount { get; set; }
         public int LastCombatKillCount { get; set; }
         public bool Gathering { get; set; }
+        public bool ReachGatherTarget { get; set; }
     }
 }

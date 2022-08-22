@@ -3,6 +3,7 @@ using Game;
 using Microsoft.Extensions.Logging;
 using SharedLib;
 using SharedLib.Extensions;
+using SharedLib.NpcFinder;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -21,6 +22,7 @@ namespace Core.Goals
         private readonly PlayerReader playerReader;
         private readonly Navigation navigation;
         private readonly StopMoving stopMoving;
+        private readonly NpcNameFinder npcNameFinder;
 
         private DateTime onEnterTime;
 
@@ -45,7 +47,7 @@ namespace Core.Goals
 
         #endregion
 
-        public WalkToGatherGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving)
+        public WalkToGatherGoal(ILogger logger, ConfigurableInput input, Wait wait, AddonReader addonReader, Navigation navigation, StopMoving stopMoving, NpcNameFinder npcNameFinder)
             : base(nameof(WalkToGatherGoal))
         {
             this.logger = logger;
@@ -55,6 +57,7 @@ namespace Core.Goals
             this.addonReader = addonReader;
             this.playerReader = addonReader.PlayerReader;
             this.stopMoving = stopMoving;
+            this.npcNameFinder = npcNameFinder;
 
             this.navigation = navigation;
 
@@ -97,7 +100,7 @@ namespace Core.Goals
             if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) > 3)
             {
                 navigation.Update();
-
+                SendGoapEvent(new GoapStateEvent(GoapKey.reachgathertarget, false));
                 //if reach the final still not close, do navigate again
                 if (!navigation.HasWaypoint())
                 {
@@ -113,6 +116,38 @@ namespace Core.Goals
                 navigation.ResetStuckParameters();
                 //reset zoom to 1
                 //playerReader.SetMinimapZoomLevel(1);
+
+                SendGoapEvent(new GoapStateEvent(GoapKey.reachgathertarget, true));
+
+                //set cusor to center screen
+                Rectangle clientrect = npcNameFinder.GetClientRect();
+
+                int StartX = clientrect.Width / 4;
+                int SizeX = clientrect.Width / 2;
+                int StartY = clientrect.Height / 4;
+                int SizeY = clientrect.Height / 2;
+                int step = 100;
+
+                for (int i = StartX; i < (StartX + SizeX); i = i + step)
+                {
+                    for (int j = StartY; j < (StartY + SizeY); j =j + step)
+                    {
+
+                        Point clickPostion = npcNameFinder.ToScreenCoordinates(i, j);
+                        input.Proc.SetCursorPosition(clickPostion);
+
+                        //cursor classifier
+                        CursorClassifier.Classify(out CursorType cls);
+
+                        if (cls == CursorType.Mine || cls == CursorType.Herb)
+                        {
+                            input.Proc.InteractMouseOver();
+                            break;
+                        }
+
+                    }
+                }
+
             }
 
             RandomJump();

@@ -80,7 +80,7 @@ namespace Core.Goals
 
             this.input = input;
             AddPrecondition(GoapKey.gathering, true);
-            AddPrecondition(GoapKey.reachgathertarget, true);
+            //AddPrecondition(GoapKey.reachgathertarget, true);
             
         }
 
@@ -88,24 +88,7 @@ namespace Core.Goals
         {
             stopMoving.Stop();
 
-            //set cusor to center screen
-            Rectangle clientrect = npcNameFinder.GetClientRect();
 
-            Point clickPostion = new Point(clientrect.X + clientrect.Width / 2, clientrect.Top + clientrect.Y / 2);//center of the client
-            input.Proc.SetCursorPosition(clickPostion);
-            //cursor classifier
-            CursorClassifier.Classify(out CursorType cls);
-
-            if (cls == CursorType.Mine || cls == CursorType.Herb)
-            {
-                //open
-                input.Proc.KeyPress(ConsoleKey.I, 6000);
-                //try again
-                input.Proc.KeyPress(ConsoleKey.I, 6000);
-            }
-
-
-            
             wait.Update();
 
             while (playerReader.Bits.IsFalling())
