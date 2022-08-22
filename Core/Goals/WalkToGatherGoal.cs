@@ -94,7 +94,7 @@ namespace Core.Goals
 
         public override void Update()
         {
-            if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos)>2)
+            if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) > 3)
             {
                 navigation.Update();
 
