@@ -140,7 +140,7 @@ namespace Game
         public void UpdateMinimapBitmap()
         {
             GetRectangle(out var rect);
-            graphicsMinimap.CopyFromScreen(rect.Right - MinimapSize - MinimapRightOffset, rect.Top + MinimapTopOffset, 0, 0, MiniMapBitmap.Size);
+            graphicsMinimap.CopyFromScreen(rect.Right - MinimapXSize - MinimapRightOffset, rect.Top + MinimapTopOffset, 0, 0, MiniMapBitmap.Size);
         }
 
         public void Dispose()
