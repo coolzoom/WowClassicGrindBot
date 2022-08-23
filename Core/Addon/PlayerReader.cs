@@ -32,7 +32,7 @@ namespace Core
         public float WorldPosZ { get; set; } // MapZ not exists. Alias for WorldLoc.Z
 
         public Vector3 BestGatherPos { get; set; }
-        public int MiniMapZoomLevel { get; set; } = 1; //1-6
+        public int MiniMapZoomLevel { get; set; } = 0; //0-5
 
 
         public float MapX => reader.GetFixed(1) * 10;
@@ -183,10 +183,10 @@ namespace Core
         public int FocusGuid => reader.GetInt(77);
         public int FocusTargetGuid => reader.GetInt(78);
 
-        public void SetMinimapZoomLevel(int level1to6)
+        public void SetMinimapZoomLevel(int level0to5)
         {
-            MiniMapZoomLevel = level1to6;
-            execGameCommand.Run($"/script Minimap:SetZoom({level1to6})");
+            MiniMapZoomLevel = level0to5;
+            execGameCommand.Run($"/script Minimap:SetZoom({level0to5})");
             execGameCommand.Run("/script Minimap:SetPlayerTexture(\"\") ");
             ///script Minimap:SetPlayerTexture("") 
             ///script Minimap:SetPlayerTexture("Interface\\Minimap\\MinimapArrow") 

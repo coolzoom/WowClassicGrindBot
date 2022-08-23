@@ -119,7 +119,7 @@ namespace Core.Goals
                 stopMoving.Stop();
                 navigation.ResetStuckParameters();
                 //reset zoom to 1
-                //playerReader.SetMinimapZoomLevel(1);
+                //playerReader.SetMinimapZoomLevel(0);
 
                 SendGoapEvent(new GoapStateEvent(GoapKey.reachgathertarget, true));
 

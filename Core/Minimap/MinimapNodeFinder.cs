@@ -95,7 +95,7 @@ namespace Core
         private List<Score> FindYellowPoints()
         {
             //find
-            MiniMapZoomLevel = addonReader.PlayerReader.MiniMapZoomLevel - 1;
+            MiniMapZoomLevel = addonReader.PlayerReader.MiniMapZoomLevel;
             List<Score> points = new(100);
             Bitmap bitmap = wowScreen.MiniMapBitmap;
             int minX = 0;
