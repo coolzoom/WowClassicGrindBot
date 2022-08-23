@@ -153,8 +153,8 @@ namespace Core
             //image       x- p  x+
             //               y+
             float worldsize = 440 - (minimapzoomlevel * 64);//actual world size in minimap
-            float Xdistanceperpixel = worldsize / wowScreen.MinimapXSize; //0.71423f; //at 1902x1080 it is (120 / 168); //zoom 5
-            float Ydistanceperpixel = worldsize / wowScreen.MinimapYSize; //0.71423f; //at 1902x1080 it is (120 / 168); //zoom 5
+            float Xdistanceperpixel = worldsize / (float)wowScreen.MinimapXSize; //0.71423f; //at 1902x1080 it is (120 / 168); //zoom 5
+            float Ydistanceperpixel = worldsize / (float)wowScreen.MinimapYSize; //0.71423f; //at 1902x1080 it is (120 / 168); //zoom 5
             int xoff = x - center.X;
             int yoff = y - center.Y;
             float finalx = (float)(addonReader.PlayerReader.WorldPos.X - yoff * Xdistanceperpixel);

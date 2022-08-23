@@ -22,10 +22,10 @@ namespace Game
         // TODO: make it work for higher resolution ex. 4k
         public int MinimapXSize { get; set; } = 168;//pixel adjusted under 1920x1080, so recommend 1920x1080
         public int MinimapYSize { get; set; } = 168;//pixel adjusted under 1920x1080, so recommend 1920x1080
-        public int MinimapRightOffset = 27;
-        public int MinimapTopOffset = 32;
-        public float xscale = 1;
-        public float yscale = 1;
+        public int MinimapRightOffset { get; set; } = 27;
+        public int MinimapTopOffset { get; set; } = 32;
+        public float xscale { get; set; } = 1;
+        public float yscale { get; set; } = 1;
 
         public bool Enabled { get; set; }
 
@@ -66,8 +66,8 @@ namespace Game
         public void UpdateScale()
         {
             //change scale
-            xscale = rect.Width / 1920;
-            yscale = rect.Height / 1080;
+            xscale = (float) ((float)rect.Width / (float)1920);
+            yscale = (float) ((float)rect.Height / (float)1080);
 
 
             MinimapXSize = (int)(168 * xscale);
