@@ -132,6 +132,7 @@ namespace Core.Goals
                 int SizeY = clientrect.Height / 2;
                 int step = 40;
 
+                bool found = false;
                 for (int i = StartX; i < (StartX + SizeX); i = i + step)
                 {
                     for (int j = StartY; j < (StartY + SizeY); j =j + step)
@@ -148,12 +149,19 @@ namespace Core.Goals
                             wait.Update();
                             input.Proc.InteractMouseOver();
                             ct.WaitHandle.WaitOne(6000);//wait till cast finish
-
+                            found = true;
                             addonReader.PlayerReader.BestGatherPos = new Vector3(0,0,0);
                             break;
                         }
 
                     }
+                }
+
+                if (!found)
+                {
+                    int moveDuration = Random.Shared.Next(750) + 1000;
+                    logger.LogInformation($"turn to find by moving for {moveDuration}ms");
+                    input.Proc.KeyPress(input.Proc.TurnLeftKey, moveDuration);
                 }
 
             }
