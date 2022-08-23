@@ -20,9 +20,12 @@ namespace Game
         private readonly List<Action<Graphics>> drawActions = new();
 
         // TODO: make it work for higher resolution ex. 4k
-        public int MinimapSize { get; set; } = 168;
-        public const int MinimapRightOffset = 27;
-        public const int MinimapTopOffset = 32;
+        public int MinimapXSize { get; set; } = 168;//pixel adjusted under 1920x1080, so recommend 1920x1080
+        public int MinimapYSize { get; set; } = 168;//pixel adjusted under 1920x1080, so recommend 1920x1080
+        public int MinimapRightOffset = 27;
+        public int MinimapTopOffset = 32;
+        public float xscale = 1;
+        public float yscale = 1;
 
         public bool Enabled { get; set; }
 
@@ -49,11 +52,28 @@ namespace Game
             GetRectangle(out rect);
             rect.Location = p;
 
+
+            //change scale
+            UpdateScale();
+
             Bitmap = new Bitmap(rect.Width, rect.Height, PixelFormat.Format32bppPArgb);
             graphics = Graphics.FromImage(Bitmap);
 
-            MiniMapBitmap = new Bitmap(MinimapSize, MinimapSize, PixelFormat.Format32bppPArgb);
+            MiniMapBitmap = new Bitmap(MinimapXSize, MinimapYSize, PixelFormat.Format32bppPArgb);
             graphicsMinimap = Graphics.FromImage(MiniMapBitmap);
+        }
+
+        public void UpdateScale()
+        {
+            //change scale
+            xscale = rect.Width / 1920;
+            yscale = rect.Height / 1080;
+
+
+            MinimapXSize = (int)(168 * xscale);
+            MinimapYSize = (int)(168 * xscale);
+            MinimapRightOffset = (int)(27 * xscale);
+            MinimapTopOffset = (int)(32 * xscale);
         }
 
         public void Update()
@@ -62,6 +82,9 @@ namespace Game
             GetPosition(ref p);
             rect.Location = p;
 
+            //change scale
+            UpdateScale();
+            
             graphics.CopyFromScreen(rect.Location, Point.Empty, Bitmap.Size);
         }
 

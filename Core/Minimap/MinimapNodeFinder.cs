@@ -152,12 +152,13 @@ namespace Core
             //               y-
             //image       x- p  x+
             //               y+
-            float worldsize = 440 - (minimapzoomlevel * 64);
-            float distanceperpixel = worldsize/wowScreen.MinimapSize; //0.71423f; //(120 / 168); //zoom 5
+            float worldsize = 440 - (minimapzoomlevel * 64);//actual world size in minimap
+            float Xdistanceperpixel = worldsize / wowScreen.MinimapXSize; //0.71423f; //at 1902x1080 it is (120 / 168); //zoom 5
+            float Ydistanceperpixel = worldsize / wowScreen.MinimapYSize; //0.71423f; //at 1902x1080 it is (120 / 168); //zoom 5
             int xoff = x - center.X;
             int yoff = y - center.Y;
-            float finalx = (float)(addonReader.PlayerReader.WorldPos.X - yoff * distanceperpixel);
-            float finaly = (float)(addonReader.PlayerReader.WorldPos.Y - xoff * distanceperpixel);
+            float finalx = (float)(addonReader.PlayerReader.WorldPos.X - yoff * Xdistanceperpixel);
+            float finaly = (float)(addonReader.PlayerReader.WorldPos.Y - xoff * Ydistanceperpixel);
             Vector3 vector3 = new Vector3(finalx, finaly, addonReader.PlayerReader.WorldPosZ);
             return vector3;
         }
