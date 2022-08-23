@@ -66,6 +66,7 @@ namespace Game
         public void UpdateScale()
         {
             //change scale
+            //TODO, MINIMAP scale is different with the window scale
             xscale = (float) ((float)rect.Width / (float)1920);
             yscale = (float) ((float)rect.Height / (float)1080);
 
