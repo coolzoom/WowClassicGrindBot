@@ -148,6 +148,8 @@ namespace Core.Goals
                             wait.Update();
                             input.Proc.InteractMouseOver();
                             ct.WaitHandle.WaitOne(6000);//wait till cast finish
+
+                            addonReader.PlayerReader.BestGatherPos = new Vector3(0,0,0);
                             break;
                         }
 

@@ -62,7 +62,17 @@ namespace Core
 
             if (best.X != 0 && best.Y != 0)
             {
-                addonReader.PlayerReader.BestGatherPos = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
+                Vector3 gp = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
+
+                //pick the nearest, do not jumping around
+                float vcorrent = addonReader.PlayerReader.WorldPos.WorldDistanceXYTo(addonReader.PlayerReader.BestGatherPos);
+                float vnew = addonReader.PlayerReader.WorldPos.WorldDistanceXYTo(gp);
+
+                if (vnew < vcorrent)
+                {
+                    addonReader.PlayerReader.BestGatherPos = gp;
+                }
+                
             }
             else
             {
