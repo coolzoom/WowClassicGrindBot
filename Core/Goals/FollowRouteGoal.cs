@@ -209,6 +209,31 @@ namespace Core.Goals
             if (!sideActivityCts.IsCancellationRequested)
                 navigation.Update(sideActivityCts.Token);
 
+
+            //blacklist not reached target
+            //check new position in black list
+            
+            foreach (var p in addonReader.PlayerReader.BlackListGatherPos)
+            {
+                if (navigation.lastFailedDestination.X != 0 && navigation.lastFailedDestination.Y != 0)
+                {
+                    if (p.WorldDistanceXYTo(navigation.lastFailedDestination) <= addonReader.PlayerReader.BestGatherDistance * 10)//ignore all target within 30square, because the calculation is not correct enough
+                    {
+                        //refill waypoints
+                        logger.LogWarning("last failed location is in blacklist! refill waypoints");
+                        RefillWaypoints(true);
+                        navigation.lastFailedDestination = new Vector3();
+                    }
+                }
+
+                //foreach (var wp in navigation.wayPoints)
+                //{
+
+                //}
+
+            }
+
+
             RandomJump();
 
             wait.Update();

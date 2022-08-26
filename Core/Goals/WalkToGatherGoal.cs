@@ -17,7 +17,7 @@ namespace Core.Goals
         public override float Cost => 1f;
         private const int FAST_DELAY = 5;
         private readonly CancellationToken ct;
-
+        
         private readonly ILogger logger;
         private readonly Wait wait;
         private readonly ConfigurableInput input;
@@ -28,6 +28,8 @@ namespace Core.Goals
         private readonly NpcNameFinder npcNameFinder;
 
         private DateTime onEnterTime;
+
+        private int ATTEMPTSCOUNT = 0; //after 5 attmpts if fail add point to blacklist
 
         #region IRouteProvider
 
@@ -101,7 +103,7 @@ namespace Core.Goals
 
         public override void Update()
         {
-            if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) > 3)
+            if (playerReader.BestGatherPos.WorldDistanceXYTo(playerReader.WorldPos) > addonReader.PlayerReader.BestGatherDistance)
             {
                 navigation.Update();
                 SendGoapEvent(new GoapStateEvent(GoapKey.reachgathertarget, false));
@@ -148,14 +150,37 @@ namespace Core.Goals
                         {
                             wait.Update();
                             input.Proc.InteractMouseOver();
-                            ct.WaitHandle.WaitOne(6000);//wait till cast finish
-                            found = true;
-                            addonReader.PlayerReader.BestGatherPos = new Vector3(0,0,0);
-                            break;
+
+                            //check is casting
+                            ct.WaitHandle.WaitOne(500);//wait cast
+                            if (playerReader.IsCasting())
+                            {
+                                ATTEMPTSCOUNT = 0;//clean fail attempts, also clean if gather success
+                                ct.WaitHandle.WaitOne(6000);//wait till cast finish
+                                found = true;
+                                addonReader.PlayerReader.BestGatherPos = new Vector3(0, 0, 0);
+                                break;
+                            }
+                            else
+                            {
+                                ATTEMPTSCOUNT += 1; //find but not casting, not enough skills?
+                            }
+ 
                         }
 
+                        //if over 5 attempts it still there
+                        if (ATTEMPTSCOUNT > addonReader.PlayerReader.GatherAttempts)
+                        {
+                            logger.LogInformation($"faild for 5 times, ether not found or not enough skills, add to blacklist.");
+                            addonReader.PlayerReader.BlackListGatherPos.Add(addonReader.PlayerReader.BestGatherPos);
+                            ATTEMPTSCOUNT = 0;//clean fail attempts, also clean if gather success
+                            addonReader.PlayerReader.BestGatherPos = new Vector3(0, 0, 0);
+                            break;
+                        }
                     }
                 }
+
+                ATTEMPTSCOUNT += 1;
 
                 if (!found)
                 {
@@ -163,6 +188,7 @@ namespace Core.Goals
                     logger.LogInformation($"turn to find by moving for {moveDuration}ms");
                     input.Proc.KeyPress(input.Proc.TurnLeftKey, moveDuration);
                 }
+ 
 
             }
 

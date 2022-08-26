@@ -87,9 +87,11 @@ namespace Core
 
         public KeyAction ClearTarget { get; } = new();
         public string ClearTargetKey { get; init; } = "Insert";
+        public string ClearTargetCommand { get; init; } = "/cleartarget";
 
         public KeyAction StopAttack { get; } = new();
         public string StopAttackKey { get; init; } = "Delete";
+        public string StopAttackCommand { get; init; } = "/stopattack /stopcasting /petfollow";
 
         public KeyAction TargetNearestTarget { get; } = new();
         public string TargetNearestTargetKey { get; init; } = "Tab";
@@ -107,6 +109,7 @@ namespace Core
 
         public KeyAction FollowTarget { get; } = new();
         public string FollowTargetKey { get; init; } = "PageDown";
+        public string FollowTargetCommand { get; init; } = "/follow";
 
         public KeyAction Mount { get; } = new();
         public string MountKey { get; init; } = "O";

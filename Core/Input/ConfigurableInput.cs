@@ -6,11 +6,12 @@ namespace Core
     {
         public readonly WowProcessInput Proc;
         public readonly ClassConfiguration ClassConfig;
-
+        private readonly ExecGameCommand execGameCommand;
+        
         public readonly int defaultKeyPress = 50;
         public readonly int fastKeyPress = 30;
 
-        public ConfigurableInput(WowProcessInput wowProcessInput, ClassConfiguration classConfig)
+        public ConfigurableInput(WowProcessInput wowProcessInput, ExecGameCommand execGameCommand, ClassConfiguration classConfig)
         {
             this.Proc = wowProcessInput;
             ClassConfig = classConfig;
@@ -19,9 +20,10 @@ namespace Core
             wowProcessInput.BackwardKey = classConfig.BackwardKey;
             wowProcessInput.TurnLeftKey = classConfig.TurnLeftKey;
             wowProcessInput.TurnRightKey = classConfig.TurnRightKey;
-
+            this.execGameCommand = execGameCommand;
             wowProcessInput.InteractMouseover = classConfig.InteractMouseOver.ConsoleKey;
             wowProcessInput.InteractMouseoverPress = classConfig.InteractMouseOver.PressDuration;
+
         }
 
         public void Stop()
@@ -76,13 +78,15 @@ namespace Core
 
         public void ClearTarget()
         {
-            Proc.KeyPress(ClassConfig.ClearTarget.ConsoleKey, defaultKeyPress);
+            //Proc.KeyPress(ClassConfig.ClearTarget.ConsoleKey, defaultKeyPress);
+            execGameCommand.Run(ClassConfig.ClearTargetCommand);
             ClassConfig.ClearTarget.SetClicked();
         }
 
         public void StopAttack()
         {
-            Proc.KeyPress(ClassConfig.StopAttack.ConsoleKey, ClassConfig.StopAttack.PressDuration);
+            //Proc.KeyPress(ClassConfig.StopAttack.ConsoleKey, ClassConfig.StopAttack.PressDuration);
+            execGameCommand.Run(ClassConfig.StopAttackCommand);
             ClassConfig.StopAttack.SetClicked();
         }
 
@@ -141,7 +145,8 @@ namespace Core
 
         public void FollowTarget()
         {
-            Proc.KeyPress(ClassConfig.FollowTarget.ConsoleKey, defaultKeyPress);
+            //Proc.KeyPress(ClassConfig.FollowTarget.ConsoleKey, defaultKeyPress);
+            execGameCommand.Run(ClassConfig.FollowTargetCommand);
             ClassConfig.FollowTarget.SetClicked();
         }
     }

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 
 using SharedLib.Extensions;
 using SharedLib;
+using SharpGen.Runtime;
 
 #pragma warning disable 162
 
@@ -110,7 +111,7 @@ namespace Core.Goals
         private readonly ManualResetEvent manualReset;
 
         private int failedAttempt;
-        private Vector3 lastFailedDestination;
+        public Vector3 lastFailedDestination;
 
         public Navigation(ILogger logger, PlayerDirection playerDirection, ConfigurableInput input, AddonReader addonReader, StopMoving stopMoving, StuckDetector stuckDetector, IPPather pather, MountHandler mountHandler, ClassConfiguration classConfiguration)
         {
@@ -323,12 +324,30 @@ namespace Core.Goals
             for (int i = 0; i < mapPoints.Length; i++)
             {
                 Vector3 worldPos = WorldMapAreaDB.ToWorld_FlipXY(mapPoints[i], playerReader.WorldMapArea);
-                if (i > 0)
+                if (i > 0 && wayPoints.Count > 0)
                 {
                     Vector3 last = wayPoints.Peek();
                     mapDistanceXY += worldPos.WorldDistanceXYTo(last);
                 }
-                wayPoints.Push(worldPos);
+
+                bool isinblacklist = false;
+                foreach (var p in addonReader.PlayerReader.BlackListGatherPos)
+                {
+                    if (worldPos.X != 0 && worldPos.Y != 0)
+                    {
+                        if (p.WorldDistanceXYTo(worldPos) <= addonReader.PlayerReader.BestGatherDistance * 10)//ignore all target within 30square, because the calculation is not correct enough
+                        {
+                            isinblacklist = true;
+                            logger.LogWarning("waypoint is in blacklist! do not add");
+                            
+                        }
+                    }
+                }
+                if (!isinblacklist)
+                {
+                    wayPoints.Push(worldPos);
+                }
+                
             }
 
             AvgDistance = wayPoints.Count > 1 ? Max(mapDistanceXY / wayPoints.Count, MinDistance) : MinDistance;
@@ -423,6 +442,9 @@ namespace Core.Goals
                     stuckDetector.SetTargetLocation(result.EndW);
                     stuckDetector.Update();
                 }
+
+                //add point to black list
+                playerReader.BlackListGatherPos.Add(result.EndW);
                 return;
             }
 
@@ -460,6 +482,13 @@ namespace Core.Goals
                 if (pathRequests.TryPeek(out PathRequest pathRequest))
                 {
                     Vector3[] path = pather.FindWorldRoute(pathRequest.MapId, pathRequest.StartW, pathRequest.EndW);
+                    if (path == null)
+                    {
+                        //add point to black list
+                        playerReader.BlackListGatherPos.Add(pathRequest.EndW);
+                    }
+
+                    
                     if (active)
                     {
                         pathResults.Enqueue(new PathResult(pathRequest, path, pathRequest.Callback));

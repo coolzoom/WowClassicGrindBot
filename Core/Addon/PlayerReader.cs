@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Numerics;
 
 using SharedLib;
@@ -33,7 +34,10 @@ namespace Core
 
         public Vector3 BestGatherPos { get; set; }
         public int MiniMapZoomLevel { get; set; } = 0; //0-5
+        public float BestGatherDistance { get; set; } = 3.0f; //start gather if within this distance
+        public int GatherAttempts { get; set; } = 5; //add to black list after 5 attempts,ther not found or not enough skills
 
+        public List<Vector3> BlackListGatherPos { get; set; } = new List<Vector3>();//no route found gather position
 
         public float MapX => reader.GetFixed(1) * 10;
         public float MapY => reader.GetFixed(2) * 10;

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Game;
 using Microsoft.Extensions.Logging;
 using SharedLib.Extensions;
+using SharpGen.Runtime;
 
 namespace Core
 {
@@ -63,6 +64,26 @@ namespace Core
             if (best.X != 0 && best.Y != 0)
             {
                 Vector3 gp = GetMiniMapWorldLoc(best.X, best.Y, MiniMapZoomLevel);
+                //check current position if is in black list
+                foreach (var p in addonReader.PlayerReader.BlackListGatherPos)
+                {
+                    if (p.WorldDistanceXYTo(addonReader.PlayerReader.BestGatherPos) <= addonReader.PlayerReader.BestGatherDistance)
+                    {
+                        //clear gather location
+                        addonReader.PlayerReader.BestGatherPos = new Vector3();
+                    }
+                }
+
+                //check new position in black list
+                foreach (var p in addonReader.PlayerReader.BlackListGatherPos)
+                {
+                    if (p.WorldDistanceXYTo(gp) <= addonReader.PlayerReader.BestGatherDistance * 10)//ignore all target within 30square, because the calculation is not correct enough
+                    {
+                        //do not add black list item
+                        return;
+                    }
+                }
+
 
                 //pick the nearest, do not jumping around
                 float vcorrent = addonReader.PlayerReader.WorldPos.WorldDistanceXYTo(addonReader.PlayerReader.BestGatherPos);
