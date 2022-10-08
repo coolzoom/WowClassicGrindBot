@@ -167,7 +167,12 @@ namespace StormDll
 
             if (open)
             {
-                string temp = Path.GetTempFileName();
+                string tempfolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StormLibTemp");
+                if (!Directory.Exists(tempfolder))
+                {
+                    Directory.CreateDirectory(tempfolder);
+                }
+                string temp = Path.Combine(tempfolder, Guid.NewGuid().ToString());// Path.GetTempFileName(); we should be very careful to use the GetTempFileName
 
                 bool extracted = Environment.Is64BitProcess
                 ? StormDllx64.SFileExtractFile(handle, "(listfile)", temp, OpenFile.SFILE_OPEN_FROM_MPQ)
