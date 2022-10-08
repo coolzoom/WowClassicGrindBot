@@ -126,7 +126,7 @@ namespace Core
         {
             try
             {
-                CopyFolder("");
+                CopyFolder(AppDomain.CurrentDomain.BaseDirectory);
                 logger.LogInformation($"{nameof(AddonConfigurator)}.{nameof(CopyAddonFiles)} - Success");
             }
             catch (Exception e)
