@@ -47,7 +47,7 @@ namespace WowTriangles
             this.logger = logger;
             this.mapId = mapId;
 
-            archive = new StormDll.ArchiveSet(this.logger, GetArchiveNames(dataConfig));
+            archive = new StormDll.ArchiveSet(this.logger, GetArchiveNames(dataConfig), dataConfig);
             modelmanager = new ModelManager(archive, 160, dataConfig);
             wmomanager = new WMOManager(archive, modelmanager, 120, dataConfig);
 
