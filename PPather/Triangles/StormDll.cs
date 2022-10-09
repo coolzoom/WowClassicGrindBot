@@ -106,7 +106,7 @@ namespace StormDll
     {
         private Archive[] archives;
 
-        public ArchiveSet(ILogger logger, string[] files)
+        public ArchiveSet(ILogger logger, string[] files, DataConfig dataConfig)
         {
             archives = new Archive[files.Length];
 
@@ -116,7 +116,7 @@ namespace StormDll
                     OpenArchive.MPQ_OPEN_NO_LISTFILE |
                     OpenArchive.MPQ_OPEN_NO_ATTRIBUTES |
                     OpenArchive.MPQ_OPEN_NO_HEADER_SEARCH |
-                    OpenArchive.MPQ_OPEN_READ_ONLY);
+                    OpenArchive.MPQ_OPEN_READ_ONLY, dataConfig);
 
                 if (open && a.IsOpen())
                 {
@@ -159,7 +159,7 @@ namespace StormDll
 
         private readonly System.Collections.Generic.HashSet<string> fileList = new(StringComparer.InvariantCultureIgnoreCase);
 
-        public Archive(string file, out bool open, uint Prio, OpenArchive Flags)
+        public Archive(string file, out bool open, uint Prio, OpenArchive Flags, DataConfig dataConfig)
         {
             open = Environment.Is64BitProcess
                 ? StormDllx64.SFileOpenArchive(file, Prio, Flags, out handle)
@@ -167,18 +167,25 @@ namespace StormDll
 
             if (open)
             {
-                string tempfolder = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "StormLibTemp");
+                string tempfolder = dataConfig.PPather;
                 if (!Directory.Exists(tempfolder))
                 {
                     Directory.CreateDirectory(tempfolder);
                 }
-                string temp = Path.Combine(tempfolder, Guid.NewGuid().ToString());// Path.GetTempFileName(); we should be very careful to use the GetTempFileName
 
-                bool extracted = Environment.Is64BitProcess
-                ? StormDllx64.SFileExtractFile(handle, "(listfile)", temp, OpenFile.SFILE_OPEN_FROM_MPQ)
-                : StormDllx86.SFileExtractFile(handle, "(listfile)", temp, OpenFile.SFILE_OPEN_FROM_MPQ);
+                FileInfo fi = new FileInfo(file);
+                string temp = Path.Combine(tempfolder, fi.Name + ".listfile.tmp");// Path.GetTempFileName(); we should be very careful to use the GetTempFileName
 
-                if (extracted && File.Exists(temp))
+                bool extracted = File.Exists(temp);
+                if (!extracted)
+                {
+                   extracted = Environment.Is64BitProcess
+                                ? StormDllx64.SFileExtractFile(handle, "(listfile)", temp, OpenFile.SFILE_OPEN_FROM_MPQ)
+                                : StormDllx86.SFileExtractFile(handle, "(listfile)", temp, OpenFile.SFILE_OPEN_FROM_MPQ);
+                }
+
+
+                if (extracted)
                 {
                     foreach (string line in File.ReadLines(temp))
                     {
